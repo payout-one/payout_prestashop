@@ -24,6 +24,8 @@
  *  International Registered Trademark & Property of PrestaShop SA
  */
 
+require_once(dirname(__FILE__) . '/PayoutConnection.php');
+
 class PayoutClient
 {
     /**
@@ -50,6 +52,43 @@ class PayoutClient
         }
 
         $this->config = $config;
+    }
+
+    /**
+     * Construct the Payout API Client.
+     *
+     * @param array $data
+     *
+     * @return mixed
+     * @throws Exception
+     */
+    public function refund(array $data, string $externalId, string $currency)
+    {
+        $nonce = $this->generateNonce();
+        $data['nonce'] = $nonce;
+
+        $message = [
+            $data['amount'],
+            $currency,
+            $externalId,
+            $data['iban']
+        ];
+
+        $data['signature'] = $this->getSignature($message, $nonce, $this->config[Payout::PAYOUT_SECRET]);
+        $response = $this->createConnection()->post('refunds', $data, [], Payout::REFUND_CHECKOUT_TIMEOUT);
+
+        if (
+            !$this->verifySignature(
+                [$response->amount, $response->currency, $response->external_id, $response->iban],
+                $response->nonce,
+                $this->config[Payout::PAYOUT_SECRET],
+                $response->signature
+            )
+        ) {
+            throw new Exception('Payout error: Invalid signature in API response.');
+        }
+
+        return $response;
     }
 
     /**

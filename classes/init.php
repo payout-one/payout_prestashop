@@ -24,5 +24,4 @@
  *  International Registered Trademark & Property of PrestaShop SA
  */
 
-require(dirname(__FILE__) . '/PayoutClient.php');
-require(dirname(__FILE__) . '/PayoutConnection.php');
+require_once(dirname(__FILE__) . '/PayoutClient.php');

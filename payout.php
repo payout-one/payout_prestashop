@@ -31,10 +31,17 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+require_once(dirname(__FILE__) . '/classes/refund/PayoutRefund.php');
+
 class Payout extends PaymentModule
 {
     private $moduleConfigs;
     private $moduleHooks;
+
+    /**
+     * @var PayoutRefund
+     */
+    private $payoutRefund;
 
 
     public const API_URL = 'https://app.payout.one/api/v1/';
@@ -43,6 +50,7 @@ class Payout extends PaymentModule
     public const AUTHENTICATE_TIMEOUT = 2;
     public const CREATE_CHECKOUT_TIMEOUT = 5;
     public const RETRIEVE_CHECKOUT_TIMEOUT = 5;
+    public const REFUND_CHECKOUT_TIMEOUT = 5;
 
     public const PAYOUT_SANDBOX_MODE = "PAYOUT_SANDBOX_MODE";
     public const PAYOUT_NOTIFY_URL = "PAYOUT_NOTIFY_URL";
@@ -55,6 +63,7 @@ class Payout extends PaymentModule
     public const PAYOUT_LOG_TABLE = "payout_log";
     public const PAYOUT_ORDER_TABLE = "payout_order";
     public const PAYOUT_PRE_CHECKOUT_TABLE = "payout_pre_checkout";
+    public const PAYOUT_REFUND_TABLE = "payout_refund";
 
 
     public const CHECKOUT_STATE_PROCESSING = "processing";
@@ -78,7 +87,7 @@ class Payout extends PaymentModule
     {
         $this->name = 'payout';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.0';
+        $this->version = '1.0.1';
         $this->author = 'Payout';
         $this->need_instance = 0;
 
@@ -91,29 +100,11 @@ class Payout extends PaymentModule
 
         parent::__construct();
 
-        if ($this->isPrestashop1_6) {
-            $sandboxConfigValueIsSet = Configuration::hasKey(self::PAYOUT_SANDBOX_MODE, null, null, Shop::getContextShopID())
-                || Configuration::hasKey(self::PAYOUT_SANDBOX_MODE, null, Shop::getContextShopID())
-                || Configuration::hasKey(self::PAYOUT_SANDBOX_MODE);
-            $sandboxConfigValue = $sandboxConfigValueIsSet ? Configuration::get(self::PAYOUT_SANDBOX_MODE) : true;
-        } else {
-            $sandboxConfigValue = Configuration::get(self::PAYOUT_SANDBOX_MODE, null, null, null, null) ?? true;
-        }
-
         $this->allowed_countries = ['AT', 'AUT', '040', 'BE', 'BEL', '056', 'BG', 'BGR', '100', 'HR', 'HRV', '191', 'CY', 'CYP', '196', 'CZ', 'CZE', '203', 'DK', 'DNK', '208', 'EE', 'EST', '233', 'FI', 'FIN', '246', 'FR', 'FRA', '250', 'DE', 'DEU', '276', 'GR', 'GRC', '300', 'HU', 'HUN', '348', 'IE', 'IRL', '372', 'IT', 'ITA', '380', 'LV', 'LVA', '428', 'LT', 'LTU', '440', 'LU', 'LUX', '442', 'MT', 'MLT', '470', 'NL', 'NLD', '528', 'PL', 'POL', '616', 'PT', 'PRT', '620', 'RO', 'ROU', '642', 'SK', 'SVK', '703', 'SI', 'SVN', '705', 'ES', 'ESP', '724', 'SE', 'SWE', '752'];
 
         $this->allowed_currencies = ['EUR', 'CZK', 'HUF', 'PLN', 'RON', 'BGN'];
 
-        $webHookUrl = str_replace('http://', 'https://', $this->context->link->getModuleLink('payout', 'webhook'));
-        $this->moduleConfigs = [
-            self::PAYOUT_SANDBOX_MODE => ['form_field' => true, 'label' => 'Enable Sandbox Mode', 'required' => true, 'readonly' => false, 'is_bool' => true, 'value' => $sandboxConfigValue],
-            self::PAYOUT_NOTIFY_URL => ['form_field' => true, 'label' => 'Notify Url', 'readonly' => true, 'value' => $webHookUrl],
-            self::PAYOUT_CLIENT_ID => ['form_field' => true, 'label' => 'Client Id', 'required' => true, 'readonly' => false, 'value' => (string)Configuration::get(self::PAYOUT_CLIENT_ID)],
-            self::PAYOUT_SECRET => ['form_field' => true, 'label' => 'Secret', 'required' => true, 'readonly' => false, 'value' => (string)Configuration::get(self::PAYOUT_SECRET)],
-            self::PAYOUT_OS_PENDING => ['form_field' => false, 'value' => (int)Configuration::get(self::PAYOUT_OS_PENDING, null, 0, 0)],
-            self::PAYOUT_OS_EXPIRED => ['form_field' => false, 'value' => (int)Configuration::get(self::PAYOUT_OS_EXPIRED, null, 0, 0)],
-            self::PAYOUT_ALLOWED_FOR_CURRENT_CONTEXT_CART => ['form_field' => false, 'value' => $this->isPaymentAllowedForCurrentContextCart()],
-        ];
+        $this->moduleConfigs = $this->getModuleConfigs();
 
         $this->displayName = $this->l('Payout Payment');
 
@@ -135,7 +126,48 @@ class Payout extends PaymentModule
             "displayAdminOrderTabContent",
             "displayAdminOrderContentOrder",
             "displayBackOfficeHeader",
+            "displayAdminOrderTop",
+            "displayAdminOrder",
+            "actionGetAdminOrderButtons",
+            "actionOrderSlipAdd",
         ];
+        $this->payoutRefund = new PayoutRefund($this);
+    }
+
+    public function getModuleConfigs($shopId = null, $onlyKeyValues = false): array
+    {
+        if (isset($shopId)) {
+            $contextType = Shop::getContext();
+            $contextShop = Shop::getContextShopID();
+            $contextGroup = Shop::getContextShopGroupID();
+            Shop::setContext(Shop::CONTEXT_SHOP, $shopId);
+        }
+
+        if ($this->isPrestashop1_6) {
+            $sandboxConfigValueIsSet = Configuration::hasKey(self::PAYOUT_SANDBOX_MODE, null, null, Shop::getContextShopID())
+                || Configuration::hasKey(self::PAYOUT_SANDBOX_MODE, null, Shop::getContextShopID())
+                || Configuration::hasKey(self::PAYOUT_SANDBOX_MODE);
+            $sandboxConfigValue = $sandboxConfigValueIsSet ? Configuration::get(self::PAYOUT_SANDBOX_MODE) : true;
+        } else {
+            $sandboxConfigValue = Configuration::get(self::PAYOUT_SANDBOX_MODE, null, null, null, null) ?? true;
+        }
+
+        $webHookUrl = str_replace('http://', 'https://', $this->context->link->getModuleLink('payout', 'webhook'));
+        $configs = [
+            self::PAYOUT_SANDBOX_MODE => ['form_field' => true, 'label' => 'Enable Sandbox Mode', 'required' => true, 'readonly' => false, 'is_bool' => true, 'value' => $sandboxConfigValue],
+            self::PAYOUT_NOTIFY_URL => ['form_field' => true, 'label' => 'Notify Url', 'readonly' => true, 'value' => $webHookUrl],
+            self::PAYOUT_CLIENT_ID => ['form_field' => true, 'label' => 'Client Id', 'required' => true, 'readonly' => false, 'value' => (string)Configuration::get(self::PAYOUT_CLIENT_ID)],
+            self::PAYOUT_SECRET => ['form_field' => true, 'label' => 'Secret', 'required' => true, 'readonly' => false, 'value' => (string)Configuration::get(self::PAYOUT_SECRET)],
+            self::PAYOUT_OS_PENDING => ['form_field' => false, 'value' => (int)Configuration::get(self::PAYOUT_OS_PENDING, null, 0, 0)],
+            self::PAYOUT_OS_EXPIRED => ['form_field' => false, 'value' => (int)Configuration::get(self::PAYOUT_OS_EXPIRED, null, 0, 0)],
+            self::PAYOUT_ALLOWED_FOR_CURRENT_CONTEXT_CART => ['form_field' => false, 'value' => $this->isPaymentAllowedForCurrentContextCart()],
+        ];
+
+        if (isset($shopId)) {
+            Shop::setContext($contextType, $contextType == Shop::CONTEXT_SHOP ? $contextShop : $contextGroup);
+        }
+
+        return $onlyKeyValues ? $this->getModuleConfigFieldsFromArray($configs) : $configs;
     }
 
     /**
@@ -264,11 +296,24 @@ class Payout extends PaymentModule
      */
     public function getModuleConfigFields(bool $onlyForm = false): array
     {
+        return $this->getModuleConfigFieldsFromArray($this->moduleConfigs, $onlyForm);
+    }
+
+    /**
+     * get module configuration fields
+     *
+     * @param array $fields
+     * @param bool $onlyForm
+     *
+     * @return array
+     */
+    private function getModuleConfigFieldsFromArray(array $fields, bool $onlyForm = false): array
+    {
         return array_map(
             function ($field) {
                 return $field['value'];
             },
-            array_filter($this->moduleConfigs, function ($field) use ($onlyForm) {
+            array_filter($fields, function ($field) use ($onlyForm) {
                 return !$onlyForm || $field['form_field'] === true;
             }));
     }
@@ -278,17 +323,21 @@ class Payout extends PaymentModule
      *
      * @return bool
      */
-    public function installTab(): bool
+    public function installTab($className): bool
     {
+        $found = $this->findTabIdByName($className);
+        if ($found) {
+            return true;
+        }
         $tab = new Tab();
-        $tab->class_name = 'AdminPayoutConfiguration';
+        $tab->class_name = $className;
         $tab->name = [];
         $languages = Language::getLanguages();
         foreach ($languages as $lang)
-            $tab->name[$lang['id_lang']] = 'AdminPayoutConfiguration';
+            $tab->name[$lang['id_lang']] = $className;
 
         $tab->id_parent = -1;
-        $tab->module = 'payout';
+        $tab->module = $this->name;
 
         return $tab->add();
     }
@@ -300,15 +349,7 @@ class Payout extends PaymentModule
      */
     public function uninstallTab(): bool
     {
-        if (version_compare(_PS_VERSION_, "1.7.1", "<")) {
-            /** @noinspection PhpDeprecationInspection */
-            $idTab = (int)Tab::getIdFromClassName('AdminPayoutConfiguration');
-        } else {
-            $tabRepository = SymfonyContainer::getInstance()->get('prestashop.core.admin.tab.repository');
-            $idTab = $tabRepository->findOneIdByClassName('AdminPayoutConfiguration');
-        }
-
-        $tab = new Tab($idTab);
+        $tab = new Tab($this->findTabIdByName('AdminPayoutConfiguration'));
         if (Validate::isLoadedObject($tab)) {
             try {
                 return $tab->delete();
@@ -317,6 +358,23 @@ class Payout extends PaymentModule
             }
         }
         return false;
+    }
+
+    /**
+     * @param $name
+     * @return int|null
+     */
+    public function findTabIdByName($name): ?int
+    {
+        if (version_compare(_PS_VERSION_, "1.7.1", "<")) {
+            /** @noinspection PhpDeprecationInspection */
+            $idTab = (int)Tab::getIdFromClassName($name);
+        } else {
+            $tabRepository = SymfonyContainer::getInstance()->get('prestashop.core.admin.tab.repository');
+            $idTab = $tabRepository->findOneIdByClassName($name);
+        }
+
+        return $idTab;
     }
 
     /**
@@ -350,7 +408,7 @@ class Payout extends PaymentModule
         return parent::install() &&
             $this->createDbTables() &&
             $this->registerHooks() &&
-            $this->installTab();
+            $this->installTab('AdminPayoutConfiguration');
     }
 
     /**
@@ -546,7 +604,7 @@ class Payout extends PaymentModule
      * @return array|bool
      * @throws PrestaShopDatabaseException
      */
-    public function getPayoutOrder(int $orderId)
+    public static function getPayoutOrder(int $orderId)
     {
         $payoutOrder = DB::getInstance()->executeS(
             'SELECT id_checkout, id_order, amount, checkout_data, checkout_status, checkout_url, payment_status, external_id, idempotency_key FROM `' . _DB_PREFIX_ . self::PAYOUT_ORDER_TABLE . '` WHERE id_order = ' . $orderId
@@ -555,6 +613,20 @@ class Payout extends PaymentModule
             return $payoutOrder[0];
         }
         return false;
+    }
+
+    /**
+     * get payout refunds sum by checkout id
+     *
+     * @param int $checkoutId
+     *
+     * @return float
+     */
+    public static function getPayoutRefunds(int $checkoutId): float
+    {
+        return (float)DB::getInstance()->getValue(
+            'SELECT IFNULL(sum(amount), 0) FROM `' . _DB_PREFIX_ . self::PAYOUT_REFUND_TABLE . '` WHERE id_checkout = ' . $checkoutId
+        );
     }
 
     /**
@@ -572,6 +644,26 @@ class Payout extends PaymentModule
         );
         if (!empty($payoutOrderLogs)) {
             return $payoutOrderLogs;
+        }
+        return false;
+    }
+
+    /**
+     * find payout order logs by order id
+     *
+     * @param int $orderId
+     *
+     * @return array|bool
+     * @throws PrestaShopDatabaseException
+     */
+    public function getPayoutOrderRefundRecords(int $orderId)
+    {
+        $payoutOrderRefundRecords = DB::getInstance()->executeS(
+            'SELECT pr.id_refund, pr.id_checkout, pr.id_employee, pr.employee_info, pr.id_withdrawal, pr.amount, pr.response, `date` FROM `' . _DB_PREFIX_ . self::PAYOUT_REFUND_TABLE
+            . '` pr JOIN `' . _DB_PREFIX_ . self::PAYOUT_ORDER_TABLE . '` po ON (pr.id_checkout = po.id_checkout) WHERE po.id_order = ' . $orderId . ' ORDER BY pr.id_refund ASC'
+        );
+        if (!empty($payoutOrderRefundRecords)) {
+            return $payoutOrderRefundRecords;
         }
         return false;
     }
@@ -631,6 +723,11 @@ class Payout extends PaymentModule
     public function hookDisplayBackOfficeHeader()
     {
         $this->context->controller->addJS($this->_path . 'views/js/back.js');
+        if ($this->context->controller->controller_name == "AdminOrders") {
+            Media::addJsDef(['payoutRefundControllerUrl' => $this->context->link->getAdminLink("AdminPayoutRefund")]);
+            $this->context->controller->addJS($this->_path . 'views/js/admin_order.js');
+            $this->context->controller->addCSS($this->_path . 'views/css/admin_order.css');
+        }
     }
 
     /**
@@ -760,7 +857,7 @@ class Payout extends PaymentModule
 
         // default state
         $payoutOrderStatus = "not_paid_yet";
-        $payoutOrder = $this->getPayoutOrder($order->id);
+        $payoutOrder = self::getPayoutOrder($order->id);
 
         // if it is confirmation page and processing state -> start countdown to redirection to payout gateway
         if (
@@ -818,8 +915,13 @@ class Payout extends PaymentModule
      */
     public function hookDisplayAdminOrderTabOrder(array $params)
     {
+        if (!$this->isPayoutOrder($params['id_order'])) {
+            return '';
+        }
         $payoutOrderLogs = $this->getPayoutOrderLogs($this->isPrestashop1_6 ? $params['order']->id : $params['id_order']);
+        $payoutOrderRefundRecords = $this->getPayoutOrderRefundRecords($this->isPrestashop1_6 ? $params['order']->id : $params['id_order']);
         $this->smarty->assign('payout_order_logs', $payoutOrderLogs);
+        $this->smarty->assign('payout_order_refund_records', $payoutOrderRefundRecords);
         $this->smarty->assign('ps_version', _PS_VERSION_);
         return $this->display(__FILE__, 'views/templates/hook/payout_order_log_link.tpl');
     }
@@ -848,9 +950,36 @@ class Payout extends PaymentModule
      */
     public function hookDisplayAdminOrderContentOrder(array $params): string
     {
-        $payoutOrderLogs = $this->getPayoutOrderLogs($this->isPrestashop1_6 ? $params['order']->id : $params['id_order']);
-        $this->smarty->assign('payout_order_logs', $payoutOrderLogs);
+        if (!$this->isPayoutOrder($params['id_order'])) {
+            return '';
+        }
+
+        $orderId = $this->isPrestashop1_6 ? $params['order']->id : $params['id_order'];
+        $payoutOrderLogs = $this->getPayoutOrderLogs($orderId);
+
+//        $currency = new Currency((new Order($params['id_order']))->id_currency);
+        $this->smarty->assign([
+            'payout_order_logs' => $payoutOrderLogs,
+            'payout_order_refund_records' => $this->getPayoutOrderRefundRecordsForTemplate($orderId),
+//            'currencySign' => $currency->symbol,
+        ]);
         return $this->display(__FILE__, 'views/templates/hook/payout_order_log.tpl');
+    }
+
+    public function getPayoutOrderRefundRecordsTemplate($orderId)
+    {
+        $this->smarty->assign('payout_order_refund_records', $this->getPayoutOrderRefundRecordsForTemplate($orderId));
+        return $this->display(__FILE__, 'views/templates/hook/payout_order_log_refund.tpl');
+    }
+
+    private function getPayoutOrderRefundRecordsForTemplate($orderId)
+    {
+        $payoutOrderRefundRecords = $this->getPayoutOrderRefundRecords($orderId);
+        foreach ($payoutOrderRefundRecords as &$payoutOrderRefundRecord) {
+            $payoutOrderRefundRecord['amount_text'] =
+                $this->context->getCurrentLocale()->formatPrice($payoutOrderRefundRecord['amount'], Currency::getIsoCodeById((new Order($orderId))->id_currency));
+        }
+        return $payoutOrderRefundRecords;
     }
 
     /**
@@ -862,21 +991,209 @@ class Payout extends PaymentModule
     public function hookDisplayTop()
     {
         if ($this->isPrestashop1_6) {
-            if (session_status() == PHP_SESSION_NONE) {
-                session_start();
-            }
-
-            if (session_status() == PHP_SESSION_ACTIVE && isset($_SESSION['payout_notifications'])) {
-                $this->smarty->assign('notifications', json_decode($_SESSION['payout_notifications'], true));
-                unset($_SESSION['payout_notifications']);
-            } elseif (isset($_COOKIE['payout_notifications'])) {
-                $this->smarty->assign('notifications', json_decode($_COOKIE['payout_notifications'], true));
-                unset($_COOKIE['payout_notifications']);
-            }
-
-            return $this->display(__FILE__, 'views/templates/hook/notifications.tpl');
+            return $this->displayNotifications();
         }
         return false;
+    }
+
+    public function hookDisplayAdminOrderTop($params)
+    {
+//        $return = $this->getAdminOrderPageMessages($params);
+        return $this->getRefund($params);
+    }
+
+    public function hookDisplayAdminOrder($params)
+    {
+        // Since Ps 1.7.7 this hook is displayed at bottom of a page and we should use a hook DisplayAdminOrderTop
+        if (version_compare(_PS_VERSION_, '1.7.7', '>=')) {
+            return false;
+        }
+
+//        $return = $this->getAdminOrderPageMessages($params);
+
+        return $this->getRefund($params);
+    }
+
+    private function getRefund($params): string
+    {
+        if (!$this->isPayoutOrder($params['id_order'])) {
+            return '';
+        }
+//        self::setPayoutNotifications(['error'], ['info'], ['success'], true);
+        $currency = new Currency((new Order($params['id_order']))->id_currency);
+        $currencyPrecision = $currency->precision;
+        $currencyPrecisionUnits = pow(10, $currency->precision);
+        $step = 1 / $currencyPrecisionUnits;
+
+//        Media::addJsDef(['orderId' => (int)$params['id_order']]);
+//        Media::addJsDef(['currencySign' => (int)$currency->symbol]);
+//        Media::addJsDef(['currencyPrecision' => $currencyPrecision]);
+
+
+        $this->context->smarty->assign([
+            'orderId' => (int)$params['id_order'],
+            'currencyPrecision' => $currencyPrecision,
+            'currencyPrecisionUnits' => $currencyPrecisionUnits,
+            'currencySign' => $currency->symbol,
+            'step' => $step,
+//            'orderRefundText' => $this->l('Order refund', 'refund'),
+            'orderRefundText' => $this->l('Refund on Payout', 'refund'),
+            'refundConfirmText' => $this->l('Are you sure to process refund via Payout?', 'refund'),
+//            'orderTotalPaidAmountText' => $this->l('Total paid amount', 'refund'),
+//            'orderRefundedAmountText' => $this->l('Refunded amount', 'refund'),
+//            'orderRefundableAmountText' => $this->l('Remaining amount to refund', 'refund'),
+//            'orderAmountToRefund' => $this->l('Amount to refund', 'refund'),
+//            'orderConfirmRefundText' => $this->l('Process refund', 'refund'),
+//            'orderRefundNotPossibleText' => $this->l('Another refund is not possible, entire amount was already refunded', 'refund'),
+//            'orderPartialRefundConfirmationText' => $this->l('Are you sure to process refund via Payout? Remaining amount to refund for this order is', 'refund'),
+//            'orderPartialRefundConfirmationText2' => $this->l('If refund amount will be higher, refund via Payout will not be processed', 'refund'),
+        ]);
+//        $paypal_order = PaypalOrder::loadByOrderId($params['id_order']);
+
+//        if (!Validate::isLoadedObject($paypal_order)) {
+//            return '';
+//        }
+
+//        $this->context->smarty->assign('chb_paypal_refund', $this->l('Refund on PayPal'));
+
+
+        return $this->displayNotifications(true)
+            . $this->context->smarty->fetch(_PS_MODULE_DIR_ . $this->name . '/views/templates/hook/partial_refund.tpl')
+            . $this->display(__FILE__, 'views/templates/hook/refund_modal.tpl')
+            . $this->display(__FILE__, 'views/templates/hook/refund.tpl');
+//        return $this->context->smarty->fetch(_PS_MODULE_DIR_ . $this->name . '/views/templates/hook/partial_refund.tpl');
+    }
+
+    /**
+     * Load PaypalOrder object by PrestaShop order ID
+     *
+     * @param int $id_order Order ID
+     *
+     * @return boolean
+     */
+    private function isPayoutOrder($id_order)
+    {
+        $sql = new DbQuery();
+        $sql->select('id_order');
+        $sql->from('orders');
+        $sql->where('module = "' . $this->name . '" and id_order = ' . (int)$id_order);
+
+        return Db::getInstance()->getValue($sql) !== false;
+    }
+
+    /**
+     * Add buttons to main buttons bar
+     */
+    public function hookActionGetAdminOrderButtons(array $params): void
+    {
+        $order = new Order($params['id_order']);
+        // todo add checkout state check
+        if (!$this->isPayoutOrder($params['id_order'])) {
+            return;
+        }
+//        $order = new Order($params['id_order']);
+//
+//        /** @var \Symfony\Bundle\FrameworkBundle\Routing\Router $router */
+//        $router = $this->get('router');
+
+        /** @var \PrestaShopBundle\Controller\Admin\Sell\Order\ActionsBarButtonsCollection $bar */
+        $bar = $params['actions_bar_buttons_collection'];
+
+        $bar->add(
+//            new \PrestaShopBundle\Controller\Admin\Sell\Order\ActionsBarButton(
+//                'btn btn-action', ['onclick' => 'refund(' . (int)$params['id_order'] . ')', 'id' => 'refund_order_on_payout'], 'Refund on payout'
+//            )
+
+            new \PrestaShopBundle\Controller\Admin\Sell\Order\ActionsBarButton(
+                'btn btn-action', ['onclick' => 'updateRefundableAmount()', 'id' => 'openRefundModalBtn', 'data-toggle' => 'modal', 'data-placement' => 'top', 'data-target' => '#refundModal'], $this->l('Refund on Payout', 'refund')
+            )
+        );
+    }
+
+    /**
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
+     */
+    public function hookActionOrderSlipAdd($params)
+    {
+        if (Tools::isSubmit('payout_partial_refund')) {
+            $errors = [];
+            $info = [];
+            $success = [];
+            $params = array_merge(Tools::getAllValues(), $params);
+            $amount = self::calculateOrderSlipAmount($params);
+            $refundResult = $this->refundOrder((int)$params['order']->id, $amount);
+
+            if ($refundResult['success']) {
+                $messageObject = json_decode($refundResult['message']);
+                $success[] = $messageObject->message;
+            } else {
+                $errors[] = $refundResult['message'];
+                $info[] = $this->l('You can also try custom refund by clicking \'Refund on Payout\' button in upper action bar', 'refund');
+            }
+
+            self::setPayoutNotifications($errors, $info, $success, true);
+        }
+    }
+
+    /**
+     * @param mixed $params
+     *
+     * @return float
+     */
+    private static function calculateOrderSlipAmount($params)
+    {
+        $amount = 0;
+
+        if (!empty($params['productList'])) {
+            foreach ($params['productList'] as $product) {
+                $amount += (float)$product['total_refunded_tax_incl'];
+            }
+        }
+
+        if (!empty($params['partialRefundShippingCost'])) {
+            $amount += $params['partialRefundShippingCost'];
+        }
+
+        // For prestashop version > 1.7.7
+        if (!empty($params['cancel_product'])) {
+            $refundData = $params['cancel_product'];
+            $amount += (float)str_replace(',', '.', $refundData['shipping_amount']);
+            if (isset($refundData['shipping']) && $refundData['shipping'] == "1") {
+                $amount += (float)$params['order']->total_shipping_tax_incl;
+            }
+        }
+
+        $amount -= self::calculateDiscount($params);
+
+        return $amount;
+    }
+
+    /**
+     * @param mixed $params
+     *
+     * @return float
+     */
+    private static function calculateDiscount($params)
+    {
+        // $params differs according PS version
+        $amount = 0;
+
+        if (!empty($params['refund_voucher_off'])) {
+            if (!empty($params['order_discount_price'])) {
+                return (float)$params['order_discount_price'];
+            }
+        }
+
+        if (!empty($params['cancel_product']['voucher_refund_type'])) {
+            if ($params['cancel_product']['voucher_refund_type'] == 1) {
+                if ($params['order'] instanceof Order) {
+                    return (float)$params['order']->total_discounts_tax_incl;
+                }
+            }
+        }
+
+        return $amount;
     }
 
     /**
@@ -1004,5 +1321,80 @@ class Payout extends PaymentModule
             $formField['label'] = $this->l($this->moduleConfigs[$formField["name"]]['label']);
         }
         return $formField;
+    }
+
+    /**
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
+     */
+    public function refundOrder(int $orderId, float $amount): array
+    {
+        return $this->payoutRefund->refund($orderId, $amount);
+    }
+
+    /**
+     * log with [Payout] prefix
+     *
+     * @param string $message the log message
+     * @param int $severity
+     * @param int|null $errorCode
+     * @param string|null $objectType
+     * @param int|null $objectId
+     *
+     * @return bool
+     */
+    public static function addLog(string $message, int $severity = 1, int $errorCode = null, string $objectType = null, int $objectId = null): bool
+    {
+        return PrestaShopLogger::addLog('[Payout] ' . $message, $severity, $errorCode, $objectType, $objectId);
+    }
+
+    public static function setPayoutNotifications($errors, $info, $success, $admin = false): void
+    {
+        if (empty($errors) && empty($info) && empty($success)) {
+            return;
+        }
+
+        $notifications = json_encode([
+            'errors' => $errors,
+            'info' => $info,
+            'success' => $success,
+        ]);
+        $sessionKey = 'payout_notifications' . ($admin ? '_admin' : '');
+
+        // save notifications to session or cookies like it is in prestashop 1.7
+        if (session_status() == PHP_SESSION_ACTIVE) {
+            $_SESSION[$sessionKey] = $notifications;
+        } elseif (session_status() == PHP_SESSION_NONE) {
+            session_start();
+            $_SESSION[$sessionKey] = $notifications;
+        } else {
+            setcookie($sessionKey, $notifications);
+        }
+    }
+
+    public static function getPayoutNotifications($admin = false): array
+    {
+        $sessionKey = 'payout_notifications' . ($admin ? '_admin' : '');
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $notifications = ['errors' => [], 'info' => [], 'success' => []];
+        if (session_status() == PHP_SESSION_ACTIVE && isset($_SESSION[$sessionKey])) {
+            $notifications = json_decode($_SESSION[$sessionKey], true);
+            unset($_SESSION[$sessionKey]);
+        } elseif (isset($_COOKIE[$sessionKey])) {
+            $notifications = json_decode($_COOKIE[$sessionKey], true);
+            unset($_COOKIE[$sessionKey]);
+        }
+
+        return $notifications;
+    }
+
+    public function displayNotifications($admin = false)
+    {
+        $this->smarty->assign('notifications', self::getPayoutNotifications($admin));
+        $this->smarty->assign('admin', $admin);
+        return $this->display(__FILE__, 'views/templates/hook/notifications.tpl');
     }
 }

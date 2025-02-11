@@ -148,21 +148,8 @@ abstract class PayoutAbstractFrontController extends ModuleFrontController
     protected function payoutRedirectWithNotifications(string $url): void
     {
         if ($this->module->isPrestashop1_6) {
-            $notifications = json_encode([
-                'errors' => $this->payoutErrors,
-                'info' => $this->payoutInfo,
-            ]);
-
             // save notifications to session or cookies like it is in prestashop 1.7
-            if (session_status() == PHP_SESSION_ACTIVE) {
-                $_SESSION['payout_notifications'] = $notifications;
-            } elseif (session_status() == PHP_SESSION_NONE) {
-                session_start();
-                $_SESSION['payout_notifications'] = $notifications;
-            } else {
-                setcookie('payout_notifications', $notifications);
-            }
-
+            Payout::setPayoutNotifications($this->payoutErrors, $this->payoutInfo, []);
             Tools::redirect($url);
         } else {
             // merge native notification with payout notifications and continue as normal
@@ -170,21 +157,5 @@ abstract class PayoutAbstractFrontController extends ModuleFrontController
             $this->info = array_merge($this->info, $this->payoutInfo);
             parent::redirectWithNotifications($url);
         }
-    }
-
-    /**
-     * log with [Payout] prefix
-     *
-     * @param string $message the log message
-     * @param int $severity
-     * @param int|null $errorCode
-     * @param string|null $objectType
-     * @param int|null $objectId
-     *
-     * @return bool
-     */
-    protected function addLog(string $message, int $severity = 1, int $errorCode = null, string $objectType = null, int $objectId = null): bool
-    {
-        return PrestaShopLogger::addLog('[Payout] ' . $message, $severity, $errorCode, $objectType, $objectId);
     }
 }

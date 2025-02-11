@@ -1,0 +1,36 @@
+.payout-refund-modal-body {
+    margin: auto;
+}
+
+.payout-refund-div-enabled {
+    visibility: visible;
+}
+
+.payout-refund-div-disabled {
+    visibility: hidden;
+    display: none;
+}
+
+/*.payout-refund-amounts {*/
+/*    margin: auto;*/
+/*    width: fit-content;*/
+/*}*/
+
+.payout-refund-modal-body > div {
+    margin: auto;
+    width: fit-content;
+}
+
+.payout-refund-amounts p {
+    width: fit-content;
+}
+
+#payoutRefundMessages.success div.alert-danger {
+    visibility: hidden;
+    display: none;
+}
+
+#payoutRefundMessages.danger div.alert-success {
+    visibility: hidden;
+    display: none;
+}
