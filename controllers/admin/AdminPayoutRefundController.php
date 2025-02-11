@@ -102,7 +102,7 @@ class AdminPayoutRefundController extends ModuleAdminController
         }
 
         $records = $this->module->getPayoutOrderRefundRecords((int)Tools::getValue("id_order"));
-        $recordsCount = $records ? count($records) : 0;
+        $recordsCount = !empty($records) ? count($records) : 0;
 
         $this->renderJsonResult(
             true,

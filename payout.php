@@ -658,7 +658,7 @@ class Payout extends PaymentModule
         if (!empty($payoutOrderLogs)) {
             return $payoutOrderLogs;
         }
-        return false;
+        return [];
     }
 
     /**
@@ -678,7 +678,7 @@ class Payout extends PaymentModule
         if (!empty($payoutOrderRefundRecords)) {
             return $payoutOrderRefundRecords;
         }
-        return false;
+        return [];
     }
 
     /**
@@ -1036,8 +1036,9 @@ class Payout extends PaymentModule
         }
 //        self::setPayoutNotifications(['error'], ['info'], ['success'], true);
         $currency = new Currency((new Order($orderId))->id_currency);
+        $prestashopLessThan177 = version_compare(_PS_VERSION_, '1.7.7', '<');
         /** @noinspection PhpDeprecationInspection */
-        $currencyPrecision = version_compare(_PS_VERSION_, '1.7.7', '<') ? (int)_PS_PRICE_DISPLAY_PRECISION_ : $currency->precision;
+        $currencyPrecision = $prestashopLessThan177 ? (int)_PS_PRICE_DISPLAY_PRECISION_ : $currency->precision;
         $currencyPrecisionUnits = pow(10, $currencyPrecision);
         $step = 1 / $currencyPrecisionUnits;
 
@@ -1046,11 +1047,14 @@ class Payout extends PaymentModule
 //        Media::addJsDef(['currencyPrecision' => $currencyPrecision]);
 
 
+        /** @noinspection PhpDeprecationInspection */
+        $currencySign = $prestashopLessThan177 ? $currency->sign : $currency->symbol;
+
         $this->context->smarty->assign([
             'orderId' => $orderId,
             'currencyPrecision' => $currencyPrecision,
             'currencyPrecisionUnits' => $currencyPrecisionUnits,
-            'currencySign' => $currency->symbol,
+            'currencySign' => $currencySign,
             'step' => $step,
 //            'orderRefundText' => $this->l('Order refund', 'refund'),
             'orderRefundText' => $this->l('Refund on Payout', 'refund'),
