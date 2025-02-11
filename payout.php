@@ -408,7 +408,8 @@ class Payout extends PaymentModule
         return parent::install() &&
             $this->createDbTables() &&
             $this->registerHooks() &&
-            $this->installTab('AdminPayoutConfiguration');
+            $this->installTab('AdminPayoutConfiguration') &&
+            $this->installTab('AdminPayoutRefund');
     }
 
     /**
@@ -592,6 +593,18 @@ class Payout extends PaymentModule
               PRIMARY KEY (`idempotency_key`),
               UNIQUE (`id_checkout`), 
               UNIQUE (`id_order`)
+            ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8;'
+            ) && Db::getInstance()->execute(
+                'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . Payout::PAYOUT_REFUND_TABLE . '` (
+              `id_refund` int(20) NOT NULL AUTO_INCREMENT,
+              `id_checkout` int(20) unsigned NOT NULL,            
+              `id_employee` int(10) unsigned NOT NULL,
+              `employee_info` text NOT NULL,
+              `id_withdrawal` int(20) unsigned NOT NULL,                            
+              `amount` decimal(20,6) NOT NULL,
+              `response` text NOT NULL,              
+              `date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              PRIMARY KEY (`id_refund`)
             ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8;'
             );
     }
