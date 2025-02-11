@@ -113,10 +113,15 @@ function updateRefundRecords() {
                 const recordsObject = JSON.parse(response.message);
                 $('#payout-refund').html(recordsObject.records_html);
                 const payoutRefundLinkQuerySelector = $('a[href=\'#payout-refund\']');
-                payoutRefundLinkQuerySelector
-                    .html(payoutRefundLinkQuerySelector
-                        .html()
-                        .replace(/(.*\()(\d+)(\).*)/, `$1${recordsObject.records_count}$3`));
+                const badgeQuerySelector = payoutRefundLinkQuerySelector.children('.badge'); // on prestashop 1.6
+                if (badgeQuerySelector.length === 1) {
+                    badgeQuerySelector.html(recordsObject.records_count);
+                } else {
+                    payoutRefundLinkQuerySelector
+                        .html(payoutRefundLinkQuerySelector
+                            .html()
+                            .replace(/(.*\()(\d+)(\).*)/, `$1${recordsObject.records_count}$3`));
+                }
             }
         },
     });
