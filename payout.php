@@ -595,7 +595,7 @@ class Payout extends PaymentModule
               UNIQUE (`id_order`)
             ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8;'
             ) && Db::getInstance()->execute(
-                'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . Payout::PAYOUT_REFUND_TABLE . '` (
+                'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . self::PAYOUT_REFUND_TABLE . '` (
               `id_refund` int(20) NOT NULL AUTO_INCREMENT,
               `id_checkout` int(20) unsigned NOT NULL,            
               `id_employee` int(10) unsigned NOT NULL,
