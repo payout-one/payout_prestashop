@@ -150,7 +150,7 @@ class PayoutRefund
                 'message' => $this->module->l("Successful refund for order:", 'refund') . ' ' . $orderId . ', '
                     . $this->module->l("amount:", 'refund') . ' ' . $responseAmount . ', '
                     . $this->module->l("currency:", 'refund') . ' ' . $response->currency . ', '
-                    . $this->module->l("iban:", 'refund') . ' ' . $response->iban . ', '
+                    . (isset($response->iban) ? ($this->module->l("iban:", 'refund') . ' ' . $response->iban . ', ') : '')
                     . $this->module->l("withdrawal id:", 'refund') . ' ' . $response->id . '. '
                     . $this->module->l("Check 'Payout refund' tab down below for more info", 'refund') . '.',
                 'fullRefundAchieved' => $fullRefundAchieved

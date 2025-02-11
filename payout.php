@@ -988,13 +988,19 @@ class Payout extends PaymentModule
         return $this->display(__FILE__, 'views/templates/hook/payout_order_log_refund.tpl');
     }
 
-    private function getPayoutOrderRefundRecordsForTemplate($orderId)
+    private function getPayoutOrderRefundRecordsForTemplate(int $orderId)
     {
         $payoutOrderRefundRecords = $this->getPayoutOrderRefundRecords($orderId);
         foreach ($payoutOrderRefundRecords as &$payoutOrderRefundRecord) {
-            $payoutOrderRefundRecord['amount_text'] =
-                $this->context->getCurrentLocale()->formatPrice($payoutOrderRefundRecord['amount'], Currency::getIsoCodeById((new Order($orderId))->id_currency));
+            if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
+                $payoutOrderRefundRecord['amount_text'] =
+                    Tools::displayPrice($payoutOrderRefundRecord['amount'], Currency::getCurrencyInstance((new Order($orderId))->id_currency));
+            } else {
+                $payoutOrderRefundRecord['amount_text'] =
+                    $this->context->getCurrentLocale()->formatPrice($payoutOrderRefundRecord['amount'], Currency::getIsoCodeById((new Order($orderId))->id_currency));
+            }
         }
+
         return $payoutOrderRefundRecords;
     }
 
@@ -1167,12 +1173,16 @@ class Payout extends PaymentModule
 
         if (!empty($params['productList'])) {
             foreach ($params['productList'] as $product) {
-                $amount += (float)$product['total_refunded_tax_incl'];
+                if (isset($product['total_refunded_tax_incl'])) {
+                    $amount += (float)$product['total_refunded_tax_incl'];
+                } else {
+                    $amount += $product['amount'];
+                }
             }
         }
 
         if (!empty($params['partialRefundShippingCost'])) {
-            $amount += $params['partialRefundShippingCost'];
+            $amount += (float)$params['partialRefundShippingCost'];
         }
 
         // For prestashop version > 1.7.7
@@ -1200,8 +1210,10 @@ class Payout extends PaymentModule
         $amount = 0;
 
         if (!empty($params['refund_voucher_off'])) {
-            if (!empty($params['order_discount_price'])) {
+            if ($params['refund_voucher_off'] == "1" && !empty($params['order_discount_price'])) {
                 return (float)$params['order_discount_price'];
+            } else if ($params['refund_voucher_off'] == "2" && !empty($params['refund_voucher_choose'])) {
+                return (float)$params['refund_voucher_choose'];
             }
         }
 

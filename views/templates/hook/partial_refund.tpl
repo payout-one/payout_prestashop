@@ -29,7 +29,6 @@
 
             // Make partial order refund in Order page in BO
             $(document).on('click', '#desc-order-partial_refund', function () {
-
                 // Create checkbox and insert for Payout refund
                 if ($('#payout_partial_refund').length === 0) {
                     let newCheckBox = `<p class="checkbox"><label for="payout_partial_refund">
@@ -58,23 +57,41 @@
             //         $('.refund-checkboxes-container').prepend(newCheckBox);
             //     }
             // });
-            $(document).on('click', '#cancel_product_save', function () {
-                if ($('#payout_partial_refund').is(":checked")) {
-                    // let amount = 0;
-                    // const form = $('#cancel_product_save').closest('form');
-                    //
-                    // if (form.hasClass('partial-refund')) {
-                    //     amount += $('#cancel_product_shipping_amount').val();
-                    // } else { // form.hasClass('standard-refund')
-                    //     const cancelProductShippingQuerySelector = $('#cancel_product_shipping');
-                    //     if (cancelProductShippingQuerySelector.is(':checked')) {
-                    //
-                    //     }
-                    // }
-                    submitRefund($(this).closest('form'));
-                    return false;
+            $(document).on('click', '#cancel_product_save,.partial_refund_fields > button[name="partialRefund"]', function () {
+                    if ($('#payout_partial_refund').is(":checked")) {
+                        // let amount = 0;
+                        // const form = $('#cancel_product_save').closest('form');
+                        //
+                        // if (form.hasClass('partial-refund')) {
+                        //     amount += $('#cancel_product_shipping_amount').val();
+                        // } else { // form.hasClass('standard-refund')
+                        //     const cancelProductShippingQuerySelector = $('#cancel_product_shipping');
+                        //     if (cancelProductShippingQuerySelector.is(':checked')) {
+                        //
+                        //     }
+                        // }
+                        // $('#payout_partial_refund').prop("checked", false);
+                        // $('button[name="partialRefund"]').attr('namee') === "partialRefund"
+                        // if ($(this).attr('name') === "partialRefund") {
+                        //     submitRefund($(this));
+                        // } else {
+                        //     submitRefund($(this).closest('form'));
+                        // }
+
+                        if ($(this).attr('name') === "partialRefund") {
+                            if ($(this).data('payout-refund-confirmed') === true) {
+                                return true;
+                            }
+                            submitRefund($(this), true);
+                        } else {
+                            submitRefund($(this).closest('form'), false);
+                        }
+
+                        return false;
+                    }
                 }
-            });
+            )
+            ;
 
             // $(document).on('click', '#update_order_status_action_btn', function () {
             //     if ($('#update_order_status_action_btn').is(":checked")) {
@@ -111,7 +128,7 @@
                 }
             });
 
-            function submitRefund(form) {
+            function submitRefund(element, isSubmitButton) {
                 // let querySelector = $('#check-filled-credentials-message');
                 // querySelector.hide();
                 $.ajax({
@@ -132,7 +149,13 @@
 
                         const alertMessage = `{/literal}{l s='Are you sure to process refund via Payout? Remaining amount to refund for this order is' mod='payout'}: {literal}${formatPrice(amount)}{/literal}{$currencySign}{literal}. {/literal}{l s='If refund amount will be higher, refund via Payout will not be processed' mod='payout'}{literal}.`;
                         if (confirm(alertMessage)) {
-                            form.trigger("submit");
+                            if (isSubmitButton) {
+                                element.data('payout-refund-confirmed', true);
+                                element.click();
+                            } else { // form
+                                element.trigger("submit");
+                            }
+                            // form.submit();
                         }
                     },
                 });

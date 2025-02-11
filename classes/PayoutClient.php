@@ -79,7 +79,7 @@ class PayoutClient
 
         if (
             !$this->verifySignature(
-                [$response->amount, $response->currency, $response->external_id, $response->iban],
+                [$response->amount, $response->currency, $response->external_id, $response->iban ?? ''],
                 $response->nonce,
                 $this->config[Payout::PAYOUT_SECRET],
                 $response->signature
