@@ -82,7 +82,9 @@ class PayoutRefund
         }
 
         $currency = new Currency($order->id_currency);
-        $amountToRefund = Tools::ps_round($amount, $currency->precision);
+        /** @noinspection PhpDeprecationInspection */
+        $currencyPrecision = version_compare(_PS_VERSION_, '1.7.7', '<') ? (int)_PS_PRICE_DISPLAY_PRECISION_ : $currency->precision;
+        $amountToRefund = Tools::ps_round($amount, $currencyPrecision);
         if ($amountToRefund <= 0) {
             $message = $this->getPayoutRefundErrorLog($this->module->l('Amount need to be positive, amount:', 'refund') . ' ' . $amountToRefund);
             Payout::addLog($message, 2, null, 'Order', $orderId);
@@ -91,8 +93,8 @@ class PayoutRefund
 
         $refundedSum = Payout::getPayoutRefunds((int)$payoutOrder['id_checkout']);
 
-        $amountToBeRefundedTotal = Tools::ps_round($refundedSum + $amountToRefund, $currency->precision);
-        $totalPaidAmount = Tools::ps_round((float)$payoutOrder['amount'], $currency->precision);
+        $amountToBeRefundedTotal = Tools::ps_round($refundedSum + $amountToRefund, $currencyPrecision);
+        $totalPaidAmount = Tools::ps_round((float)$payoutOrder['amount'], $currencyPrecision);
         if ($amountToBeRefundedTotal > $totalPaidAmount) {
             $message = $this->getPayoutRefundErrorLog(
                 $this->module->l('Total refunded sum would be higher than payed price, refunded sum:', 'refund') . ' ' . $refundedSum . ', '

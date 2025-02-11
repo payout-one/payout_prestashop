@@ -928,11 +928,12 @@ class Payout extends PaymentModule
      */
     public function hookDisplayAdminOrderTabOrder(array $params)
     {
-        if (!$this->isPayoutOrder($params['id_order'])) {
+        $orderId = $this->isPrestashop1_6 ? $params['order']->id : $params['id_order'];
+        if (!$this->isPayoutOrder($orderId)) {
             return '';
         }
-        $payoutOrderLogs = $this->getPayoutOrderLogs($this->isPrestashop1_6 ? $params['order']->id : $params['id_order']);
-        $payoutOrderRefundRecords = $this->getPayoutOrderRefundRecords($this->isPrestashop1_6 ? $params['order']->id : $params['id_order']);
+        $payoutOrderLogs = $this->getPayoutOrderLogs($orderId);
+        $payoutOrderRefundRecords = $this->getPayoutOrderRefundRecords($orderId);
         $this->smarty->assign('payout_order_logs', $payoutOrderLogs);
         $this->smarty->assign('payout_order_refund_records', $payoutOrderRefundRecords);
         $this->smarty->assign('ps_version', _PS_VERSION_);
@@ -963,17 +964,18 @@ class Payout extends PaymentModule
      */
     public function hookDisplayAdminOrderContentOrder(array $params): string
     {
-        if (!$this->isPayoutOrder($params['id_order'])) {
+        $orderId = $this->isPrestashop1_6 ? $params['order']->id : $params['id_order'];
+        if (!$this->isPayoutOrder($orderId)) {
             return '';
         }
 
-        $orderId = $this->isPrestashop1_6 ? $params['order']->id : $params['id_order'];
         $payoutOrderLogs = $this->getPayoutOrderLogs($orderId);
 
 //        $currency = new Currency((new Order($params['id_order']))->id_currency);
         $this->smarty->assign([
             'payout_order_logs' => $payoutOrderLogs,
             'payout_order_refund_records' => $this->getPayoutOrderRefundRecordsForTemplate($orderId),
+            'prestashop16' => $this->isPrestashop1_6,
 //            'currencySign' => $currency->symbol,
         ]);
         return $this->display(__FILE__, 'views/templates/hook/payout_order_log.tpl');
@@ -982,6 +984,7 @@ class Payout extends PaymentModule
     public function getPayoutOrderRefundRecordsTemplate($orderId)
     {
         $this->smarty->assign('payout_order_refund_records', $this->getPayoutOrderRefundRecordsForTemplate($orderId));
+        $this->smarty->assign('prestashop16', $this->isPrestashop1_6);
         return $this->display(__FILE__, 'views/templates/hook/payout_order_log_refund.tpl');
     }
 
@@ -1012,7 +1015,7 @@ class Payout extends PaymentModule
     public function hookDisplayAdminOrderTop($params)
     {
 //        $return = $this->getAdminOrderPageMessages($params);
-        return $this->getRefund($params);
+        return $this->getRefund($params['id_order']);
     }
 
     public function hookDisplayAdminOrder($params)
@@ -1023,19 +1026,19 @@ class Payout extends PaymentModule
         }
 
 //        $return = $this->getAdminOrderPageMessages($params);
-
-        return $this->getRefund($params);
+        return $this->getRefund($params['id_order']);
     }
 
-    private function getRefund($params): string
+    private function getRefund(int $orderId): string
     {
-        if (!$this->isPayoutOrder($params['id_order'])) {
+        if (!$this->isPayoutOrder($orderId)) {
             return '';
         }
 //        self::setPayoutNotifications(['error'], ['info'], ['success'], true);
-        $currency = new Currency((new Order($params['id_order']))->id_currency);
-        $currencyPrecision = $currency->precision;
-        $currencyPrecisionUnits = pow(10, $currency->precision);
+        $currency = new Currency((new Order($orderId))->id_currency);
+        /** @noinspection PhpDeprecationInspection */
+        $currencyPrecision = version_compare(_PS_VERSION_, '1.7.7', '<') ? (int)_PS_PRICE_DISPLAY_PRECISION_ : $currency->precision;
+        $currencyPrecisionUnits = pow(10, $currencyPrecision);
         $step = 1 / $currencyPrecisionUnits;
 
 //        Media::addJsDef(['orderId' => (int)$params['id_order']]);
@@ -1044,7 +1047,7 @@ class Payout extends PaymentModule
 
 
         $this->context->smarty->assign([
-            'orderId' => (int)$params['id_order'],
+            'orderId' => $orderId,
             'currencyPrecision' => $currencyPrecision,
             'currencyPrecisionUnits' => $currencyPrecisionUnits,
             'currencySign' => $currency->symbol,
@@ -1099,7 +1102,7 @@ class Payout extends PaymentModule
      */
     public function hookActionGetAdminOrderButtons(array $params): void
     {
-        $order = new Order($params['id_order']);
+//        $order = new Order($params['id_order']);
         // todo add checkout state check
         if (!$this->isPayoutOrder($params['id_order'])) {
             return;
