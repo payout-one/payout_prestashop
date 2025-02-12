@@ -1,0 +1,196 @@
+.payout-payment-block {
+    text-align: center;
+    padding: 30px;
+    width: 100%;
+}
+
+.payout-icon-container {
+    margin-bottom: 20px;
+}
+
+.payout-redirect-icon {
+    font-size: 48px;
+    color: #673ab7;
+}
+
+.payout-success-icon,
+.payout-not-started-icon {
+    font-size: 48px;
+    width: 80px;
+    height: 80px;
+    line-height: 80px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.payout-success-icon {
+    color: #4caf50;
+    background: #e8f5e9;
+}
+
+.payout-not-started-icon {
+    color: #ff9800;
+    background: #fff3e0;
+}
+
+.payout-expired-icon img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #eeeeee;
+    padding: 10px;
+}
+
+.payout-redirect-message h2 {
+    font-size: 26px;
+    margin-bottom: 10px;
+    color: #673ab7;
+}
+
+.payout-message h2 {
+    font-size: 26px;
+    margin-bottom: 10px;
+}
+
+.payout-redirect-message p {
+    font-size: 16px;
+    color: #4527a0;
+}
+
+.payout-message p {
+    font-size: 16px;
+    margin-bottom: 30px;
+}
+
+.payout-payment-success .payout-message h2 {
+    color: #673ab7;
+}
+
+.payout-payment-success .payout-message p {
+    color: #4527a0;
+}
+
+.payout-payment-failure .payout-message h2 {
+    color: #d500f9;
+}
+
+.payout-payment-failure .payout-message p {
+    color: #880e4f;
+}
+
+.payout-payment-not-started .payout-message h2 {
+    color: #ff9800;
+}
+
+.payout-payment-not-started .payout-message p {
+    color: #ff6f00;
+}
+
+.payout-payment-expired .payout-message h2 {
+    color: #9e9e9e;
+}
+
+.payout-payment-expired .payout-message p {
+    color: #616161;
+}
+
+.payout-continue-button,
+.payout-retry-button,
+.payout-pay-button {
+    border: none;
+    padding: 12px 25px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.payout-continue-button {
+    background-color: #673ab7;
+    color: #fff;
+}
+
+.payout-retry-button {
+    background-color: #7e57c2;
+    color: #fff;
+}
+
+.payout-pay-button {
+    background-color: #ff9800;
+    color: #fff;
+}
+
+#payout-countdown {
+    font-weight: bold;
+    font-size: 24px;
+    color: #d500f9;
+}
+
+.payout-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px; /* Pridanie medzery medzi tlačidlami */
+}
+
+.btn.payout-redirection {
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+
+    min-width: 250px;
+    display: inline-flex; /* Flexbox pre vycentrovanie */
+    align-items: center; /* Vertikálne vycentrovanie obsahu */
+    justify-content: center; /* Horizontálne vycentrovanie obsahu */
+
+    text-align: center; /* Zarovná text na stred */
+    white-space: normal;
+    overflow-wrap: break-word; /* Alternatívne zalomenie dlhých slov */
+}
+
+.btn.payout-redirection.cancel-redirect {
+    background-color: #f44336;
+    color: #fff;
+}
+
+.btn.payout-redirection.cancel-redirect:hover {
+    background-color: #d32f2f;
+}
+
+.btn.payout-redirection.redirect {
+    background-color: #4caf50;
+    color: #fff;
+}
+
+.btn.payout-redirection.redirect:hover {
+    background-color: #388e3c;
+}
+
+.payout-notifications {
+    padding-top: 25px;
+}
+
+p.payment_module a.payout {
+    background: url(../../logo.png) 15px 15px no-repeat #fbfbfb;
+}
+
+p.payment_module a.payout:after {
+    display: block;
+    content: "\f054";
+    position: absolute;
+    right: 15px;
+    margin-top: -11px;
+    top: 50%;
+    font-family: "FontAwesome";
+    font-size: 25px;
+    height: 22px;
+    width: 14px;
+    color: #777;
+}
+
+p.payment_module a.payout:hover {
+    background-color: #f6f6f6;
+}
