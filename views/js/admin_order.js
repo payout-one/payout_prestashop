@@ -1,7 +1,5 @@
 function refund(amount) {
-    // let querySelector = $('#check-filled-credentials-message');
     clearRefundMessage();
-    // querySelector.hide();
     const loaderQuerySelector = $('#payoutRefundLoader');
     showPayoutRefundDivElement(loaderQuerySelector);
     $.ajax({
@@ -15,16 +13,6 @@ function refund(amount) {
             amount,
         },
         success(response) {
-            // querySelector.removeClass("alert-danger");
-            // querySelector.removeClass("alert-info");
-            // if (response.result) {
-            //     querySelector.addClass("alert-info");
-            // } else {
-            //     querySelector.addClass("alert-danger");
-            // }
-
-            // querySelector.html(response.message);
-            // querySelector.show();
             hidePayoutRefundDivElement(loaderQuerySelector);
             if (response.result) {
                 const message = JSON.parse(response.message);
@@ -37,15 +25,11 @@ function refund(amount) {
             } else {
                 showRefundMessage('danger', response.message);
             }
-            // updateRefundableAmount();
-            // alert(response.message);
         },
     });
 }
 
 function updateRefundableAmount() {
-    // let querySelector = $('#check-filled-credentials-message');
-    // querySelector.hide();
     $.ajax({
         url: payoutRefundControllerUrl,
         type: 'post',
@@ -56,16 +40,6 @@ function updateRefundableAmount() {
             id_order: orderId,
         },
         success(response) {
-            // querySelector.removeClass("alert-danger");
-            // querySelector.removeClass("alert-info");
-            // if (response.result) {
-            //     querySelector.addClass("alert-info");
-            // } else {
-            //     querySelector.addClass("alert-danger");
-            // }
-
-            // querySelector.html(response.message);
-            // querySelector.show();
             const message = JSON.parse(response.message);
             const payoutRefundFormQuerySelector = $('.payoutRefundForm');
             const payoutRefundNotPossibleQuerySelector = $('#payoutRefundNotPossible');
@@ -87,8 +61,6 @@ function updateRefundableAmount() {
 }
 
 function updateRefundRecords() {
-    // let querySelector = $('#check-filled-credentials-message');
-    // querySelector.hide();
     $.ajax({
         url: payoutRefundControllerUrl,
         type: 'post',
@@ -99,16 +71,6 @@ function updateRefundRecords() {
             id_order: orderId,
         },
         success(response) {
-            // querySelector.removeClass("alert-danger");
-            // querySelector.removeClass("alert-info");
-            // if (response.result) {
-            //     querySelector.addClass("alert-info");
-            // } else {
-            //     querySelector.addClass("alert-danger");
-            // }
-
-            // querySelector.html(response.message);
-            // querySelector.show();
             if (response.result) {
                 const recordsObject = JSON.parse(response.message);
                 $('#payout-refund').html(recordsObject.records_html);
@@ -130,10 +92,6 @@ function updateRefundRecords() {
 function formatPrice(price) {
     return (Math.round(price * currencyPrecisionUnits) / currencyPrecisionUnits).toFixed(currencyPrecision);
 }
-
-// $("#refundModal").on("hidden.bs.modal", function () {
-//     clearRefundMessage();
-// });
 
 document.addEventListener("DOMContentLoaded", function () {
     $('#confirmRefund').on('click', function () {

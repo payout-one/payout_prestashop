@@ -970,13 +970,11 @@ class Payout extends PaymentModule
         }
 
         $payoutOrderLogs = $this->getPayoutOrderLogs($orderId);
-
-//        $currency = new Currency((new Order($params['id_order']))->id_currency);
+        
         $this->smarty->assign([
             'payout_order_logs' => $payoutOrderLogs,
             'payout_order_refund_records' => $this->getPayoutOrderRefundRecordsForTemplate($orderId),
             'prestashop16' => $this->isPrestashop1_6,
-//            'currencySign' => $currency->symbol,
         ]);
         return $this->display(__FILE__, 'views/templates/hook/payout_order_log.tpl');
     }
@@ -993,6 +991,7 @@ class Payout extends PaymentModule
         $payoutOrderRefundRecords = $this->getPayoutOrderRefundRecords($orderId);
         foreach ($payoutOrderRefundRecords as &$payoutOrderRefundRecord) {
             if (version_compare(_PS_VERSION_, '1.7.7', '<')) {
+                /** @noinspection PhpDeprecationInspection */
                 $payoutOrderRefundRecord['amount_text'] =
                     Tools::displayPrice($payoutOrderRefundRecord['amount'], Currency::getCurrencyInstance((new Order($orderId))->id_currency));
             } else {
@@ -1020,7 +1019,6 @@ class Payout extends PaymentModule
 
     public function hookDisplayAdminOrderTop($params)
     {
-//        $return = $this->getAdminOrderPageMessages($params);
         return $this->getRefund($params['id_order']);
     }
 
@@ -1031,7 +1029,6 @@ class Payout extends PaymentModule
             return false;
         }
 
-//        $return = $this->getAdminOrderPageMessages($params);
         return $this->getRefund($params['id_order']);
     }
 
@@ -1040,17 +1037,12 @@ class Payout extends PaymentModule
         if (!$this->isPayoutOrder($orderId)) {
             return '';
         }
-//        self::setPayoutNotifications(['error'], ['info'], ['success'], true);
         $currency = new Currency((new Order($orderId))->id_currency);
         $prestashopLessThan177 = version_compare(_PS_VERSION_, '1.7.7', '<');
         /** @noinspection PhpDeprecationInspection */
         $currencyPrecision = $prestashopLessThan177 ? (int)_PS_PRICE_DISPLAY_PRECISION_ : $currency->precision;
         $currencyPrecisionUnits = pow(10, $currencyPrecision);
         $step = 1 / $currencyPrecisionUnits;
-
-//        Media::addJsDef(['orderId' => (int)$params['id_order']]);
-//        Media::addJsDef(['currencySign' => (int)$currency->symbol]);
-//        Media::addJsDef(['currencyPrecision' => $currencyPrecision]);
 
 
         /** @noinspection PhpDeprecationInspection */
@@ -1062,36 +1054,18 @@ class Payout extends PaymentModule
             'currencyPrecisionUnits' => $currencyPrecisionUnits,
             'currencySign' => $currencySign,
             'step' => $step,
-//            'orderRefundText' => $this->l('Order refund', 'refund'),
             'orderRefundText' => $this->l('Refund on Payout', 'refund'),
             'refundConfirmText' => $this->l('Are you sure to process refund via Payout?', 'refund'),
-//            'orderTotalPaidAmountText' => $this->l('Total paid amount', 'refund'),
-//            'orderRefundedAmountText' => $this->l('Refunded amount', 'refund'),
-//            'orderRefundableAmountText' => $this->l('Remaining amount to refund', 'refund'),
-//            'orderAmountToRefund' => $this->l('Amount to refund', 'refund'),
-//            'orderConfirmRefundText' => $this->l('Process refund', 'refund'),
-//            'orderRefundNotPossibleText' => $this->l('Another refund is not possible, entire amount was already refunded', 'refund'),
-//            'orderPartialRefundConfirmationText' => $this->l('Are you sure to process refund via Payout? Remaining amount to refund for this order is', 'refund'),
-//            'orderPartialRefundConfirmationText2' => $this->l('If refund amount will be higher, refund via Payout will not be processed', 'refund'),
         ]);
-//        $paypal_order = PaypalOrder::loadByOrderId($params['id_order']);
-
-//        if (!Validate::isLoadedObject($paypal_order)) {
-//            return '';
-//        }
-
-//        $this->context->smarty->assign('chb_paypal_refund', $this->l('Refund on PayPal'));
-
 
         return $this->displayNotifications(true)
             . $this->context->smarty->fetch(_PS_MODULE_DIR_ . $this->name . '/views/templates/hook/partial_refund.tpl')
             . $this->display(__FILE__, 'views/templates/hook/refund_modal.tpl')
             . $this->display(__FILE__, 'views/templates/hook/refund.tpl');
-//        return $this->context->smarty->fetch(_PS_MODULE_DIR_ . $this->name . '/views/templates/hook/partial_refund.tpl');
     }
 
     /**
-     * Load PaypalOrder object by PrestaShop order ID
+     * Load PayoutOrder object by PrestaShop order ID
      *
      * @param int $id_order Order ID
      *
@@ -1112,24 +1086,15 @@ class Payout extends PaymentModule
      */
     public function hookActionGetAdminOrderButtons(array $params): void
     {
-//        $order = new Order($params['id_order']);
         // todo add checkout state check
         if (!$this->isPayoutOrder($params['id_order'])) {
             return;
         }
-//        $order = new Order($params['id_order']);
-//
-//        /** @var \Symfony\Bundle\FrameworkBundle\Routing\Router $router */
-//        $router = $this->get('router');
 
         /** @var \PrestaShopBundle\Controller\Admin\Sell\Order\ActionsBarButtonsCollection $bar */
         $bar = $params['actions_bar_buttons_collection'];
 
         $bar->add(
-//            new \PrestaShopBundle\Controller\Admin\Sell\Order\ActionsBarButton(
-//                'btn btn-action', ['onclick' => 'refund(' . (int)$params['id_order'] . ')', 'id' => 'refund_order_on_payout'], 'Refund on payout'
-//            )
-
             new \PrestaShopBundle\Controller\Admin\Sell\Order\ActionsBarButton(
                 'btn btn-action', ['onclick' => 'updateRefundableAmount()', 'id' => 'openRefundModalBtn', 'data-toggle' => 'modal', 'data-placement' => 'top', 'data-target' => '#refundModal'], $this->l('Refund on Payout', 'refund')
             )

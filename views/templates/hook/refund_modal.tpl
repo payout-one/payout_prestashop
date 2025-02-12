@@ -49,28 +49,4 @@
         </div>
     </div>
 </div>
-
-
-{*<div id="refundModal" class="modal">*}
-{*    <div class="modal-content">*}
-{*        <!-- Tlačidlo na zatvorenie -->*}
-{*        <span class="close">&times;</span>*}
-
-{*        <!-- Hlavička -->*}
-{*        <div class="modal-header">*}
-{*            <h2>Požiadať o refundáciu</h2>*}
-{*        </div>*}
-
-{*        <!-- Obsah -->*}
-{*        <div class="modal-body">*}
-{*            <p>Maximálna suma na refundáciu: <strong id="maxAmount">100 €</strong></p>*}
-{*            <input type="number" id="refundAmount" min="0.01" max="100" step="0.01" value="100">*}
-{*        </div>*}
-
-{*        <!-- Footer s tlačidlami -->*}
-{*        <div class="modal-footer">*}
-{*            <button class="cancel-btn">Zrušiť</button>*}
-{*            <button class="confirm-btn">Potvrdiť</button>*}
-{*        </div>*}
-{*    </div>*}
-{*</div>*}
+s

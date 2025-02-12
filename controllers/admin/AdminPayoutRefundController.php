@@ -62,7 +62,6 @@ class AdminPayoutRefundController extends ModuleAdminController
 
         $currency = new Currency((new Order((int)Tools::getValue("id_order")))->id_currency);
 
-//        $refunded = Tools::ps_round(Payout::getPayoutRefunds((int)$payoutOrder['id_checkout']), 2);
         $totalAmount = (float)$payoutOrder['amount'];
         $refunded = Payout::getPayoutRefunds((int)$payoutOrder['id_checkout']);
         /** @noinspection PhpDeprecationInspection */
