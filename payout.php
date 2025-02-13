@@ -949,7 +949,7 @@ class Payout extends PaymentModule
     public function hookDisplayAdminOrderTabOrder(array $params)
     {
         $orderId = $this->isPrestashop1_6 ? $params['order']->id : $params['id_order'];
-        $payoutOrder = self::getPayoutOrder((int)$params['id_order']);
+        $payoutOrder = self::getPayoutOrder($orderId);
         if (!$payoutOrder) {
             return '';
         }
@@ -986,7 +986,7 @@ class Payout extends PaymentModule
     public function hookDisplayAdminOrderContentOrder(array $params): string
     {
         $orderId = $this->isPrestashop1_6 ? $params['order']->id : $params['id_order'];
-        $payoutOrder = self::getPayoutOrder((int)$params['id_order']);
+        $payoutOrder = self::getPayoutOrder($orderId);
         if (!$payoutOrder) {
             return '';
         }
