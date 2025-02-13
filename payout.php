@@ -1293,6 +1293,30 @@ class Payout extends PaymentModule
     }
 
     /**
+     * calculate discount - if need to add tax - add it
+     *
+     * @param Order $order
+     * @param float $discountAmount
+     * @return float
+     */
+    private static function calculateDiscountAmount(Order $order, float $discountAmount): float
+    {
+        if (!self::isTaxIncludedInOrder($order)) {
+            $currency = new Currency($order->id_currency);
+            /** @noinspection PhpDeprecationInspection */
+            $currencyPrecision = version_compare(_PS_VERSION_, '1.7.7', '<') ? (int)_PS_PRICE_DISPLAY_PRECISION_ : $currency->precision;
+            $carrier = new Carrier($order->id_carrier);
+            $address = Address::initialize($order->id_address_delivery, false);
+            $tax_calculator = $carrier->getTaxCalculator($address);
+            if ($tax_calculator instanceof TaxCalculator) {
+                $discountAmount = Tools::ps_round($tax_calculator->addTaxes($discountAmount), $currencyPrecision);
+            }
+        }
+
+        return $discountAmount;
+    }
+
+    /**
      * @param Order $order
      *
      * @return bool
@@ -1320,7 +1344,7 @@ class Payout extends PaymentModule
 
         if (!empty($params['refund_voucher_off'])) {
             if ($params['refund_voucher_off'] == "1" && !empty($params['order_discount_price'])) {
-                return (float)$params['order_discount_price'];
+                return self::calculateDiscountAmount($params['order'], (float)$params['order_discount_price']);
             }
         }
 
