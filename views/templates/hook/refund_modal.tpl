@@ -32,7 +32,7 @@
 
                 <div id="payoutRefundLoader" class="payout-refund-div-disabled">
                     {if $prestashop16}
-                        <img class="payout-loading-image" src="{$module_dir}/views/img/loader.gif"
+                        <img src="{$module_dir}/views/img/loader.gif"
                              alt="Loading..."/>
                     {else}
                         <div class="spinner-border text-primary" role="status">
