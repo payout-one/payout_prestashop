@@ -1242,8 +1242,6 @@ class Payout extends PaymentModule
         if (!empty($params['refund_voucher_off'])) {
             if ($params['refund_voucher_off'] == "1" && !empty($params['order_discount_price'])) {
                 return (float)$params['order_discount_price'];
-            } else if ($params['refund_voucher_off'] == "2" && !empty($params['refund_voucher_choose'])) {
-                return (float)$params['refund_voucher_choose'];
             }
         }
 
