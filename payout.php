@@ -87,7 +87,7 @@ class Payout extends PaymentModule
     {
         $this->name = 'payout';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.1';
+        $this->version = '1.1.0';
         $this->author = 'Payout';
         $this->need_instance = 0;
 
