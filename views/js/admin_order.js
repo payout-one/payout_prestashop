@@ -59,7 +59,7 @@ function updateRefundableAmount() {
                 showPayoutRefundDivElement(payoutRefundNotPossibleQuerySelector);
             }
         },
-        complete: async function () {
+        complete: function () {
             hidePayoutRefundDivElement(payoutRefundModalLoadingQuerySelector);
         },
     });
