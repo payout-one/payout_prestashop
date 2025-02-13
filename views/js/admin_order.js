@@ -30,6 +30,8 @@ function refund(amount) {
 }
 
 function updateRefundableAmount() {
+    const payoutRefundModalLoadingQuerySelector = $('#payout-refund-modal-loading');
+    showPayoutRefundDivElement(payoutRefundModalLoadingQuerySelector);
     $.ajax({
         url: payoutRefundControllerUrl,
         type: 'post',
@@ -56,6 +58,9 @@ function updateRefundableAmount() {
                 hidePayoutRefundDivElement(payoutRefundFormQuerySelector);
                 showPayoutRefundDivElement(payoutRefundNotPossibleQuerySelector);
             }
+        },
+        complete: async function () {
+            hidePayoutRefundDivElement(payoutRefundModalLoadingQuerySelector);
         },
     });
 }

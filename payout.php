@@ -1114,6 +1114,7 @@ class Payout extends PaymentModule
             'step' => $step,
             'orderRefundText' => $this->l('Refund on Payout', 'refund'),
             'refundConfirmText' => $this->l('Are you sure to process refund via Payout?', 'refund'),
+            $this->smarty->assign('prestashop16', $this->isPrestashop1_6),
         ]);
 
         return $this->displayNotifications(true)

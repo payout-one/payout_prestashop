@@ -7,6 +7,20 @@
             </div>
 
             <div class="payout-refund-modal-body">
+                <div id="payout-refund-modal-loading" class="payout-refund-div-disabled">
+                    {if $prestashop16}
+                        <div class="payout-loading-div">
+                            <img class="payout-loading-image" src="{$module_dir}/views/img/loader.gif"
+                                 alt="Loading..."/>
+                        </div>
+                    {else}
+                        <div class="position-absolute w-100 h-100 d-flex flex-column align-items-center bg-white justify-content-center payout-loading-div-bs">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">{l s='Loading' mod='payout'}...</span>
+                            </div>
+                        </div>
+                    {/if}
+                </div>
                 <div class="payout-refund-amounts">
                     <p>{l s='Total paid amount' mod='payout'}: <strong
                                 id="payoutOrderAmount">{$step}</strong><strong> {$currencySign}</strong></p>
@@ -17,9 +31,14 @@
                 </div>
 
                 <div id="payoutRefundLoader" class="payout-refund-div-disabled">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="sr-only">{l s='Loading' mod='payout'}...</span>
-                    </div>
+                    {if $prestashop16}
+                        <img class="payout-loading-image" src="{$module_dir}/views/img/loader.gif"
+                             alt="Loading..."/>
+                    {else}
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">{l s='Loading' mod='payout'}...</span>
+                        </div>
+                    {/if}
                 </div>
                 <div id="payoutRefundMessages" class="payout-refund-div-disabled">
                     <div class="alert alert-success alert-dismissible">
