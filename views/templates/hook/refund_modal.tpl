@@ -29,6 +29,7 @@
                     <p>{l s='Remaining amount to refund' mod='payout'}: <strong
                                 id="payoutMaxRefundAmount">{$step}</strong><strong> {$currencySign}</strong></p>
                 </div>
+                <hr/>
 
                 <div id="payoutRefundLoader" class="payout-refund-div-disabled">
                     {if $prestashop16}
