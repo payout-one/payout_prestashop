@@ -1325,7 +1325,7 @@ class Payout extends PaymentModule
     {
         $customer = new Customer($order->id_customer);
 
-        $taxCalculationMethod = Group::getPriceDisplayMethod((int)$customer->id_default_group);
+        $taxCalculationMethod = (int)Group::getPriceDisplayMethod((int)$customer->id_default_group);
 
         return $taxCalculationMethod === PS_TAX_INC;
     }
