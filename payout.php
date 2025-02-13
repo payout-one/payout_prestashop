@@ -1194,6 +1194,7 @@ class Payout extends PaymentModule
      * @param array $params
      *
      * @return float
+     * @throws PrestaShopException
      */
     private static function calculateOrderSlipAmount(array $params): float
     {
@@ -1210,21 +1211,99 @@ class Payout extends PaymentModule
         }
 
         if (!empty($params['partialRefundShippingCost'])) {
-            $amount += (float)$params['partialRefundShippingCost'];
+            self::addShippingRefund($params['order'], (float)$params['partialRefundShippingCost'], $amount);
         }
 
         // For prestashop version > 1.7.7
         if (!empty($params['cancel_product'])) {
             $refundData = $params['cancel_product'];
-            $amount += (float)str_replace(',', '.', $refundData['shipping_amount']);
+
+            self::addShippingRefund($params['order'], (float)str_replace(',', '.', $refundData['shipping_amount']), $amount);
+
             if (isset($refundData['shipping']) && $refundData['shipping'] == "1") {
-                $amount += (float)$params['order']->total_shipping_tax_incl;
+                self::addShippingRefund($params['order'], (float)$params['order']->total_shipping_tax_incl, $amount, true);
             }
         }
 
         $amount -= self::calculateDiscount($params);
 
         return $amount;
+    }
+
+    /**
+     * @param int $orderId
+     *
+     * @return float
+     * @throws PrestaShopDatabaseException
+     */
+    private static function getLastOrderSlipShippingAmount(int $orderId): float
+    {
+        $result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
+            SELECT
+                IFNULL(total_shipping_tax_incl, 0) refund_amount
+            FROM `' . _DB_PREFIX_ . 'order_slip`
+            WHERE `id_order` = ' . $orderId . ' ORDER BY id_order_slip DESC LIMIT 1');
+        if (empty($result)) {
+            return 0;
+        }
+
+        return (float)$result[0]['refund_amount'];
+    }
+
+    /**
+     * Calculate refundable shipping amount
+     *
+     * @param Order $order
+     * @param float $refundAmount
+     * @param float $variableToAdd
+     * @param bool $isWithTax
+     *
+     * @return void
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
+     */
+
+    private static function addShippingRefund(Order $order, float $refundAmount, float &$variableToAdd, bool $isWithTax = false): void
+    {
+        if ($refundAmount <= 0) {
+            return;
+        }
+
+        $lastRefundedAmount = self::getLastOrderSlipShippingAmount($order->id);
+        $needToAddTax = !$isWithTax && !self::isTaxIncludedInOrder($order);
+        $currency = new Currency($order->id_currency);
+        /** @noinspection PhpDeprecationInspection */
+        $currencyPrecision = version_compare(_PS_VERSION_, '1.7.7', '<') ? (int)_PS_PRICE_DISPLAY_PRECISION_ : $currency->precision;
+
+        if ($needToAddTax) {
+            $carrier = new Carrier($order->id_carrier);
+            $address = Address::initialize($order->id_address_delivery, false);
+            $tax_calculator = $carrier->getTaxCalculator($address);
+            if ($tax_calculator instanceof TaxCalculator) {
+                $refundAmount = Tools::ps_round($tax_calculator->addTaxes($refundAmount), $currencyPrecision);
+            }
+        }
+
+        $lastRefundedAmountRounded = Tools::ps_round($lastRefundedAmount, $currencyPrecision);
+        if ($refundAmount > $lastRefundedAmountRounded) {
+            $refundAmount = $lastRefundedAmountRounded;
+        }
+
+        $variableToAdd += $refundAmount;
+    }
+
+    /**
+     * @param Order $order
+     *
+     * @return bool
+     */
+    private static function isTaxIncludedInOrder(Order $order): bool
+    {
+        $customer = new Customer($order->id_customer);
+
+        $taxCalculationMethod = Group::getPriceDisplayMethod((int)$customer->id_default_group);
+
+        return $taxCalculationMethod === PS_TAX_INC;
     }
 
     /**
