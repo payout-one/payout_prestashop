@@ -32,7 +32,7 @@
             $(document).on('change', '#cancel_product_credit_slip', function () {
                 const payoutRefundCheckboxQuerySelector = $('#payout_partial_refund');
                 const payoutRefundDivQuerySelector = $('#payout_partial_refund_outer_div');
-                if ($(this).is(':checked')) {
+                if ($(this).is(':checked') && ($('.partial-refund-display').length > 0 || $('.standard-refund-display').length > 0)) {
                     if (payoutRefundCheckboxQuerySelector.length === 0) {
                         let newCheckBox = `
                         <div id="payout_partial_refund_outer_div" class="cancel-product-element form-group" style="display: block;">

@@ -1,4 +1,4 @@
-{if $prestashop16}
+{if $prestashop16 && $checkoutSuccess}
     <a id="openRefundModalBtn" class="btn btn-default" onclick="updateRefundableAmount()" data-toggle="modal"
        data-placement="top" data-target="#refundModal">
         {l s='Refund on Payout' mod='payout'}

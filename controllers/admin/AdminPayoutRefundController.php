@@ -107,7 +107,7 @@ class AdminPayoutRefundController extends ModuleAdminController
             true,
             json_encode(
                 [
-                    'records_html' => $this->module->getPayoutOrderRefundRecordsTemplate((int)Tools::getValue("id_order")),
+                    'records_html' => $this->module->getPayoutOrderRefundRecordsTemplate((int)Tools::getValue("id_order"), $payoutOrder['checkout_status'] == Payout::CHECKOUT_STATE_SUCCEEDED),
                     'records_count' => $recordsCount,
                 ]
             )

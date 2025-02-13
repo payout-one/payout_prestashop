@@ -949,7 +949,8 @@ class Payout extends PaymentModule
     public function hookDisplayAdminOrderTabOrder(array $params)
     {
         $orderId = $this->isPrestashop1_6 ? $params['order']->id : $params['id_order'];
-        if (!$this->isPayoutOrder($orderId)) {
+        $payoutOrder = self::getPayoutOrder((int)$params['id_order']);
+        if (!$payoutOrder) {
             return '';
         }
         $payoutOrderLogs = $this->getPayoutOrderLogs($orderId);
@@ -985,7 +986,8 @@ class Payout extends PaymentModule
     public function hookDisplayAdminOrderContentOrder(array $params): string
     {
         $orderId = $this->isPrestashop1_6 ? $params['order']->id : $params['id_order'];
-        if (!$this->isPayoutOrder($orderId)) {
+        $payoutOrder = self::getPayoutOrder((int)$params['id_order']);
+        if (!$payoutOrder) {
             return '';
         }
 
@@ -995,6 +997,7 @@ class Payout extends PaymentModule
             'payout_order_logs' => $payoutOrderLogs,
             'payout_order_refund_records' => $this->getPayoutOrderRefundRecordsForTemplate($orderId),
             'prestashop16' => $this->isPrestashop1_6,
+            'checkoutSuccess' => $payoutOrder['checkout_status'] == Payout::CHECKOUT_STATE_SUCCEEDED,
         ]);
         return $this->display(__FILE__, 'views/templates/hook/payout_order_log.tpl');
     }
@@ -1002,14 +1005,19 @@ class Payout extends PaymentModule
     /**
      * get payout refund records template output
      *
-     * @param $orderId
+     * @param int $orderId
+     * @param bool $checkoutSuccess
      *
      * @return false|string
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
+     * @throws \PrestaShop\PrestaShop\Core\Localization\Exception\LocalizationException
      */
-    public function getPayoutOrderRefundRecordsTemplate($orderId)
+    public function getPayoutOrderRefundRecordsTemplate(int $orderId, bool $checkoutSuccess)
     {
         $this->smarty->assign('payout_order_refund_records', $this->getPayoutOrderRefundRecordsForTemplate($orderId));
         $this->smarty->assign('prestashop16', $this->isPrestashop1_6);
+        $this->smarty->assign('checkoutSuccess', $checkoutSuccess);
         return $this->display(__FILE__, 'views/templates/hook/payout_order_log_refund.tpl');
     }
 
@@ -1092,7 +1100,8 @@ class Payout extends PaymentModule
      */
     private function getRefund(int $orderId): string
     {
-        if (!$this->isPayoutOrder($orderId)) {
+        $payoutOrder = self::getPayoutOrder($orderId);
+        if (!$payoutOrder || $payoutOrder['checkout_status'] != self::CHECKOUT_STATE_SUCCEEDED) {
             return '';
         }
         $currency = new Currency((new Order($orderId))->id_currency);
@@ -1124,23 +1133,6 @@ class Payout extends PaymentModule
     }
 
     /**
-     * check if order is payout order by order id
-     *
-     * @param int $id_order
-     *
-     * @return boolean
-     */
-    private function isPayoutOrder(int $id_order): bool
-    {
-        $sql = new DbQuery();
-        $sql->select('id_order');
-        $sql->from('orders');
-        $sql->where('module = "' . $this->name . '" and id_order = ' . (int)$id_order);
-
-        return Db::getInstance()->getValue($sql) !== false;
-    }
-
-    /**
      * Add buttons to main buttons bar
      *
      * @param array $params
@@ -1150,8 +1142,8 @@ class Payout extends PaymentModule
      */
     public function hookActionGetAdminOrderButtons(array $params): void
     {
-        // todo add checkout state check
-        if (!$this->isPayoutOrder($params['id_order'])) {
+        $payoutOrder = self::getPayoutOrder((int)$params['id_order']);
+        if (!$payoutOrder || $payoutOrder['checkout_status'] != self::CHECKOUT_STATE_SUCCEEDED) {
             return;
         }
 
