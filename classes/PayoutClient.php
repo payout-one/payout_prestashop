@@ -36,7 +36,7 @@ class PayoutClient
     private $connection;
 
     /**
-     * Construct the Payout API Client.
+     * construct the Payout API Client.
      *
      * @param array $config
      *
@@ -55,9 +55,11 @@ class PayoutClient
     }
 
     /**
-     * Construct the Payout API Client.
+     * process refund
      *
      * @param array $data
+     * @param string $externalId
+     * @param string $currency
      *
      * @return mixed
      * @throws Exception

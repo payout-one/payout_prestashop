@@ -3,9 +3,9 @@
 class AdminPayoutRefundController extends ModuleAdminController
 {
     /**
-     * check api credentials
-     *
+     * process ajax refund
      * @return void
+     * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
      */
     public function displayAjaxRefund(): void
@@ -37,7 +37,7 @@ class AdminPayoutRefundController extends ModuleAdminController
     }
 
     /**
-     * check api credentials
+     * find remaining refundable amount for order
      *
      * @return void
      * @throws PrestaShopException

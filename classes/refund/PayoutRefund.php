@@ -29,6 +29,9 @@ require_once(dirname(__FILE__) . '/../../classes/PayoutClient.php');
 
 class PayoutRefund
 {
+    /**
+     * @var Payout
+     */
     private $module;
 
     public function __construct(Payout $module)
@@ -39,9 +42,11 @@ class PayoutRefund
     /**
      * create payout client
      *
+     * @param array $moduleConfigurations
+     *
      * @return PayoutClient|string
      */
-    private function createPayoutClient($moduleConfigurations)
+    private function createPayoutClient(array $moduleConfigurations)
     {
         try {
             return new PayoutClient($moduleConfigurations);
@@ -52,8 +57,11 @@ class PayoutRefund
     }
 
     /**
+     * Process refund
+     *
      * @param int $orderId
-     * @param int|null $amount
+     * @param float $amount
+     *
      * @return array
      * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
@@ -167,7 +175,12 @@ class PayoutRefund
         }
     }
 
-    private function getPayoutRefundErrorLog($log): string
+    /**
+     * Get Payout refund error log with prefix
+     * @param string $log
+     * @return string
+     */
+    private function getPayoutRefundErrorLog(string $log): string
     {
         return $this->module->l('Payout refund error', 'refund') . ' - ' . $log;
     }
