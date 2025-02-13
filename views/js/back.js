@@ -15,9 +15,9 @@ function checkCredentials() {
         },
         success(response) {
             querySelector.removeClass("alert-danger");
-            querySelector.removeClass("alert-info");
+            querySelector.removeClass("alert-success");
             if (response.result) {
-                querySelector.addClass("alert-info");
+                querySelector.addClass("alert-success");
             } else {
                 querySelector.addClass("alert-danger");
             }
