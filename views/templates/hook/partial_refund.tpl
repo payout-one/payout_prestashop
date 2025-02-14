@@ -8,7 +8,7 @@
                 if ($('#payout_partial_refund').length === 0) {
                     let newCheckBox = `<p class="checkbox"><label for="payout_partial_refund">
                         <input type="checkbox" id="payout_partial_refund" name="payout_partial_refund" value="1">
-                          Return on payout</label></p>`;
+                          {/literal}{l s='Refund on Payout' mod='payout'}{literal}</label></p>`;
                     $('button[name=partialRefund]').parent('.partial_refund_fields').prepend(newCheckBox);
                 }
             });
@@ -41,7 +41,7 @@
                                       <label>
                                           <input type="checkbox" id="payout_partial_refund" name="payout_partial_refund" material_design="material_design" value="1">
                                           <i class="md-checkbox-control"></i>
-                                            Return on payout
+                                            {/literal}{l s='Refund on Payout' mod='payout'}{literal}
                                         </label>
                                     </div>
                                 </div>

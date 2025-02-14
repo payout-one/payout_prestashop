@@ -11,7 +11,7 @@
                     {if $prestashop16}
                         <div class="payout-loading-div">
                             <img class="payout-loading-image" src="{$module_dir}/views/img/loader.gif"
-                                 alt="Loading..."/>
+                                 alt="{l s='Loading' mod='payout'}..."/>
                         </div>
                     {else}
                         <div class="position-absolute w-100 h-100 d-flex flex-column align-items-center bg-white justify-content-center payout-loading-div-bs">
@@ -34,7 +34,7 @@
                 <div id="payoutRefundLoader" class="payout-refund-div-disabled">
                     {if $prestashop16}
                         <img src="{$module_dir}/views/img/loader.gif"
-                             alt="Loading..."/>
+                             alt="{l s='Loading' mod='payout'}..."/>
                     {else}
                         <div class="spinner-border text-primary" role="status">
                             <span class="sr-only">{l s='Loading' mod='payout'}...</span>
