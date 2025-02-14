@@ -207,8 +207,8 @@ Postup pre refudáciu:
 
 ##### Prestashop refundácia
 
-Súbežna Payout refundácia s prestashop refundáciou(`Bežné vrátenie peňazí` alebo `Vrátenie produktov`) je k dispozícii v
-prípade ak je stav checkout-u úspešný.
+Súbežna Payout refundácia s prestashop refundáciou(`Bežné vrátenie peňazí` alebo `Vrátenie produktov`), je k dispozícii
+v prípade, ak je stav checkout-u úspešný.
 
 Postup pre refundáciu:
 
@@ -228,7 +228,7 @@ Postup pre refundáciu:
 
 ##### Tabuľka záznamov o refundáciach
 
-Podobne ako [Tabuľka payout logov](#tabuľka-payout-logov), je v detaile objednávky je k dispozícii prehľad informácii o
+Podobne ako [Tabuľka payout logov](#tabuľka-payout-logov), je v detaile objednávky k dispozícii prehľad informácii o
 refundáciach vo forme tabuľky.
 
 V prestashop 1.7 a 8 je umiestnená takto:
