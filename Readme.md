@@ -169,6 +169,88 @@ Pre objednávku vytvorenú so zvolenou payout platobnou možnosťou, existujú t
 
    ![order_state_expired](views/img/readme/order_state_expired.png)
 
+#### Refundácia
+
+V detaile objednávky, je možné vykonať refudáciu prostredníctvom Payout-u. Je možné vykonať ľubovoľný počet refundácii,
+ktorých súčet nepresahuje zaplatenú čiastku.
+
+Refundácia sa dá vykonať dvoma rôznymi spôsobmi:
+
+1. Manuálnym zadaním čiastky.
+2. Vykonaním prestashop refundácie a zvolenia súbežnej refundácie cez Payout.
+
+##### Manuálna Payout refundácia
+
+Manuála refundácia je k dispozícii ak je stav checkout-u úspešný.
+
+Postup pre refudáciu:
+
+1. Stlačiť tlačidlo `Refundovať cez Payout`.
+    - prestashop 1.7. a 8
+      ![manual_refund_1_1](views/img/readme/manual_refund1_1sk.png)
+    - prestashop 1.6
+      ![manual_refund_1_2](views/img/readme/manual_refund1_2sk.png)
+2. Otvorí sa dialóg, kde je vidno prehľad refundácii - zaplatená čiastka, refundovaná čiastka a zostávajúca čiastka na
+   refundáciu. Pole `Čiastka na refundáciu` sa predvyplní na najvyššiu možnú refudovateľnú čiastku. Túto čiastku je
+   možné upravovať až do najvyššej možnej refudovateľnej čiastky.
+   ![manual_refund_2](views/img/readme/manual_refund2sk.png)
+3. Tlačidlom `Vykonať refund`, sa otvorí potvrdzovacie okno, kde sa refund dá potrvrdiť, prípadne zrušiť.
+   ![manual_refund_3](views/img/readme/manual_refund3sk.png)
+4. Po potvrdení okna, sa odošle požiadavka na refundáciu a po spracovaní, sa zobrazí správa o výsledku požiadavky.
+   ![manual_refund_4](views/img/readme/manual_refund4sk.png)
+5. V prípade že došlo k refundovaniu celej zaplatenej čiastky, zmení sa stav objednávky na `Platba bola vrátená` a okno
+   objednávky sa nanovo načíta. Po novom načítaní bude navrchu zobrazená správa o úspešnej refundácii.
+   ![manual_refund_5](views/img/readme/manual_refund5sk.png)
+6. Ak už celá čiastka bola refundovaná, po kliknutí na tlačidlo `Refundovať cez Payout`, sa zobrazí správa o nemožnosti
+   ďalšej refundácie.
+   ![manual_refund_6](views/img/readme/manual_refund6sk.png)
+
+##### Prestashop refundácia
+
+Súbežna Payout refundácia s prestashop refundáciou(`Bežné vrátenie peňazí` alebo `Vrátenie produktov`) je k dispozícii v
+prípade ak je stav checkout-u úspešný.
+
+Postup pre refundáciu:
+
+1. Prejsť do časti `Bežné vrátenie peňazí` alebo `Vrátenie produktov` v detaile objednávky.
+   ![presta_refund_1](views/img/readme/presta_refund1sk.png)
+2. Vyplniť polia pre prestashop refundáciu.
+   ![presta_refund_2](views/img/readme/presta_refund2sk.png)
+3. Zaškrtnúť pole `Refundovať cez Payout` (pole `Vygenerovať dobropis` musí byť tiež zaškrtnuté).
+   ![presta_refund_3](views/img/readme/presta_refund3sk.png)
+4. Stlačiť tlačidlo `Vrátenie produktov`. Po stlačení tlačidla sa zobrazí potvrdzovacie okno so správou o zostávajúcej
+   refundovateľnej čiastke. Okno sa dá potrvrdiť, prípadne zrušiť.
+   ![presta_refund_4](views/img/readme/presta_refund4sk.png)
+5. Po potvrdení okna, sa odošle požiadavka na refundáciu a po spracovaní sa zobrazí správa o výsledku požiadavky.
+   ![presta_refund_5](views/img/readme/presta_refund5sk.png)
+6. V prípade že došlo k refundovaniu celej zaplatenej čiastky, zmení sa stav objednávky na `Platba bola vrátená`.
+   ![presta_refund_6](views/img/readme/presta_refund6sk.png)
+
+##### Tabuľka záznamov o refundáciach
+
+Podobne ako [Tabuľka payout logov](#tabuľka-payout-logov), je v detaile objednávky je k dispozícii prehľad informácii o
+refundáciach vo forme tabuľky.
+
+V prestashop 1.7 a 8 je umiestnená takto:
+![refund_table_1](views/img/readme/refund_table1sk.png)
+
+V prestashop 1.6 je umiestnená takto:
+![refund_table_2](views/img/readme/refund_table2sk.png)
+
+Tabuľka obsahuje nasledujúce stĺpce:
+
+- Čas - čas vytvorenia záznamu
+- Id checkout-u - id checkout-u v payout systéme
+- Zamestnanec - meno, priezvisko, email a id zamestnanca, ktorý vykonal refundáciu
+- Id výberu(withdrawal id)
+- Čiastka
+- Detail
+    - po kliknutí na modré tlačidlo `Detail` sa otvorí okno s detailom záznamu
+    - v detaile je okrem údajov z tabuľky, k dispozícii detail odpovede z refundácie, na základe ktorých bol záznam
+      vytvorený
+
+  ![refund_table_3](views/img/readme/refund_table3sk.png)
+
 ### Prestashop logy
 
 - Modul v prípade chýb alebo potreby upozornenia loguje do prestashop log tabuľky
