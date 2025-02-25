@@ -13,7 +13,7 @@ abstract class PayoutAbstractCheckoutFrontController extends PayoutAbstractFront
     protected function validateCheckoutApiConfig(): bool
     {
         if (empty($this->moduleConfigurations[Payout::PAYOUT_CLIENT_ID]) || empty($this->moduleConfigurations[Payout::PAYOUT_SECRET])) {
-            $this->addLog($this->module->l("Client id or secret is not filled in payout module configuration!", 'checkout'), 3, null, 'Cart', Context::getContext()->cart->id);
+            Payout::addLog($this->module->l("Client id or secret is not filled in payout module configuration!", 'checkout'), 3, null, 'Cart', Context::getContext()->cart->id);
             $this->payoutErrors[] = $this->module->l("Problem occurred while initializing payout payment, contact support please.", 'checkout');
             $this->payoutRedirectWithNotifications("index.php?controller=order");
             return false;
@@ -30,7 +30,7 @@ abstract class PayoutAbstractCheckoutFrontController extends PayoutAbstractFront
     protected function validateCustomerContext(): bool
     {
         if (!$this->moduleConfigurations[Payout::PAYOUT_ALLOWED_FOR_CURRENT_CONTEXT_CART]) {
-            $this->addLog($this->module->l("Payout payment is not allowed for country or currency of customer", 'checkout'), 2, null, 'Cart', Context::getContext()->cart->id);
+            Payout::addLog($this->module->l("Payout payment is not allowed for country or currency of customer", 'checkout'), 2, null, 'Cart', Context::getContext()->cart->id);
             $this->payoutErrors[] = $this->module->l("Problem occurred while initializing payout payment, contact support please.", 'checkout');
             $this->payoutRedirectWithNotifications("index.php?controller=order");
             return false;
@@ -62,7 +62,7 @@ abstract class PayoutAbstractCheckoutFrontController extends PayoutAbstractFront
             $idempotencyKey = $preCheckout['idempotency_key'];
             if ($preCheckout['id_checkout'] != null) {
                 // if checkout already exists -> log it
-                $this->addLog($this->module->l("Checkout already exists for order", 'checkout'), 2, null, "Order", $order->id);
+                Payout::addLog($this->module->l("Checkout already exists for order", 'checkout'), 2, null, "Order", $order->id);
                 $error = $this->module->l("Problem occurred while initializing payment, try it again down below.", 'checkout');
                 if ($repeatedInitialization) {
                     $this->redirectToOrderDetail($order, $error);
@@ -84,7 +84,7 @@ abstract class PayoutAbstractCheckoutFrontController extends PayoutAbstractFront
             } finally {
                 if (isset($exceptionMessage) || (isset($preCheckoutInsertResult) && !$preCheckoutInsertResult)) {
                     $additionalMessage = isset($exceptionMessage) ? ' : ' . $exceptionMessage : '';
-                    $this->addLog($this->module->l("Error while inserting to precheckout table", 'checkout') . $additionalMessage, 2, null, "Order", $order->id);
+                    Payout::addLog($this->module->l("Error while inserting to precheckout table", 'checkout') . $additionalMessage, 2, null, "Order", $order->id);
                     $error = $this->module->l("Problem occurred while initializing payment, try it again down below.", 'checkout');
                     if ($repeatedInitialization) {
                         $this->redirectToOrderDetail($order, $error);
@@ -115,7 +115,7 @@ abstract class PayoutAbstractCheckoutFrontController extends PayoutAbstractFront
                 $this->redirectToOrderConfirmation($order->id, $cart->id);
             }
         } catch (Exception $e) {
-            $this->addLog($this->module->l("Error while creating checkout:", 'checkout') . ' ' . $e->getMessage(), 2, null, "Order", $order->id);
+            Payout::addLog($this->module->l("Error while creating checkout:", 'checkout') . ' ' . $e->getMessage(), 2, null, "Order", $order->id);
             $error = $this->module->l("Problem occurred while initializing payment, try it again down below.", 'checkout');
             if ($repeatedInitialization) {
                 $this->redirectToOrderDetail($order, $error);
@@ -160,7 +160,7 @@ abstract class PayoutAbstractCheckoutFrontController extends PayoutAbstractFront
         foreach ($order->getProducts() as $product) {
             $productAttributes[] = [
                 'name' => $product['product_name'],
-                'unit_price' => "" . intval($product['product_price_wt'] * 100),
+                'unit_price' => "" . intval(round($product['product_price_wt'] * 100)),
                 'quantity' => (int)$product['product_quantity'],
             ];
         }
@@ -168,7 +168,7 @@ abstract class PayoutAbstractCheckoutFrontController extends PayoutAbstractFront
         if ($order->total_shipping > 0) {
             $productAttributes[] = [
                 'name' => $this->module->l('shipping cost', 'checkout'),
-                'unit_price' => "" . intval($order->total_shipping * 100),
+                'unit_price' => "" . intval(round($order->total_shipping * 100)),
                 'quantity' => 1,
             ];
         }
@@ -176,13 +176,13 @@ abstract class PayoutAbstractCheckoutFrontController extends PayoutAbstractFront
         if ($order->total_wrapping > 0) {
             $productAttributes[] = [
                 'name' => $this->module->l('wrapping cost', 'checkout'),
-                'unit_price' => "" . intval($order->total_wrapping * 100),
+                'unit_price' => "" . intval(round($order->total_wrapping * 100)),
                 'quantity' => 1,
             ];
         }
 
         return [
-            'amount' => intval($order->total_paid * 100),
+            'amount' => intval(round($order->total_paid * 100)),
             'currency' => $currency->iso_code,
             'customer' => [
                 'first_name' => $customer->firstname,
@@ -282,7 +282,7 @@ abstract class PayoutAbstractCheckoutFrontController extends PayoutAbstractFront
         try {
             return new PayoutClient($this->moduleConfigurations);
         } catch (\Exception $e) {
-            $this->addLog($this->module->l('Payout api client initialization failed for this context. Error:', 'checkout') . ' ' . $e->getMessage(), 3);
+            Payout::addLog($this->module->l('Payout api client initialization failed for this context. Error:', 'checkout') . ' ' . $e->getMessage(), 3);
             $this->payoutErrors[] = $this->module->l("Server side problem, contact shop support, please.", 'checkout');
             $this->payoutRedirectWithNotifications("index.php?controller=order");
             return false;

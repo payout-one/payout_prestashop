@@ -47,7 +47,7 @@ class PayoutRepeatModuleFrontController extends PayoutAbstractCheckoutFrontContr
                 return;
             }
 
-            $payoutOrder = $this->module->getPayoutOrder($orderId);
+            $payoutOrder = Payout::getPayoutOrder($orderId);
             if ($payoutOrder) {
                 // if checkout for order already exists -> check if it is still processing
                 if (in_array($payoutOrder['checkout_status'], [Payout::CHECKOUT_STATE_PROCESSING, Payout::CHECKOUT_STATE_EXPIRED])) {
@@ -58,7 +58,7 @@ class PayoutRepeatModuleFrontController extends PayoutAbstractCheckoutFrontContr
                         $this->createOrUpdatePayoutOrder(json_decode($payoutOrder['checkout_data'], true), $retrieve, $order);
                         $checkoutUrl = $retrieve->checkout_url;
                     } catch (Exception $e) {
-                        $this->addLog($this->module->l("Error while retrieving checkout:", 'repeat') . ' ' . $e->getMessage(), 2, null, "Order", $orderId);
+                        Payout::addLog($this->module->l("Error while retrieving checkout:", 'repeat') . ' ' . $e->getMessage(), 2, null, "Order", $orderId);
                     }
 
                     // if retrieve failed or status is still processing, redirect customer to payment gateway

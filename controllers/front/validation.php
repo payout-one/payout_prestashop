@@ -89,7 +89,7 @@ class PayoutValidationModuleFrontController extends PayoutAbstractCheckoutFrontC
                 $secureKey
             );
         } catch (Exception $e) {
-            $this->addLog($this->module->l("Error while validating order with cart:", 'checkout') . ' ' . $e->getMessage(), 2, null, "Cart", $cart->id);
+            Payout::addLog($this->module->l("Error while validating order with cart:", 'checkout') . ' ' . $e->getMessage(), 2, null, "Cart", $cart->id);
             $this->payoutErrors[] = $this->module->l("Problem occurred while validating order", 'checkout');
             $this->payoutRedirectWithNotifications('index.php?controller=order');
             return;

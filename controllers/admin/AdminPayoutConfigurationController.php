@@ -19,7 +19,7 @@ class AdminPayoutConfigurationController extends ModuleAdminController
             $this->renderJsonResult(false, $this->module->l('Some of parameters for credentials check are not available in request', 'configuration'));
             return;
         }
-        
+
         $sandbox = Tools::getValue("PAYOUT_SANDBOX_MODE") === 'true';
         $baseUrl = $sandbox ? Payout::API_URL_SANDBOX : Payout::API_URL;
         $clientId = Tools::getValue("PAYOUT_CLIENT_ID");
@@ -68,7 +68,6 @@ class AdminPayoutConfigurationController extends ModuleAdminController
      */
     private function checkApiCredentials(string $baseUrl, string $clientId, string $clientSecret)
     {
-        require(dirname(__FILE__) . '/../../classes/PayoutConnection.php');
         try {
             $payoutConnection = new PayoutConnection($baseUrl);
             $payoutConnection->authenticate(

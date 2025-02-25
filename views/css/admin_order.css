@@ -1,0 +1,64 @@
+.payout-refund-modal-body {
+    margin: auto;
+    position: relative;
+}
+
+.payout-refund-div-enabled {
+    visibility: visible;
+}
+
+.payout-refund-div-disabled {
+    visibility: hidden;
+    display: none;
+}
+
+.payout-refund-modal-body > div:not(#payout-refund-modal-loading) {
+    margin: auto;
+    width: fit-content;
+}
+
+.payout-refund-amounts p {
+    width: fit-content;
+}
+
+#payoutRefundMessages.success div.alert-danger {
+    visibility: hidden;
+    display: none;
+}
+
+#payoutRefundMessages.danger div.alert-success {
+    visibility: hidden;
+    display: none;
+}
+
+.payout-loading-div {
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    position: absolute;
+    opacity: 0.9;
+    display: block;
+    z-index: 99;
+    text-align: center;
+    background-color: white;
+}
+
+.payout-loading-div-bs {
+    opacity: 0.9;
+}
+
+.payout-loading-image {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: auto;
+    max-width: 100%;
+    max-height: 100%;
+    transform: translate(-50%, -50%);
+    z-index: 100;
+}
+
+#confirmRefund {
+    margin-top: 1rem;
+}

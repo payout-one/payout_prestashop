@@ -61,13 +61,13 @@ class PayoutWebhookModuleFrontController extends PayoutAbstractFrontController
         // check if payout order for checkout from webhook exists
         $payoutOrder = $this->getPayoutOrderByCheckoutId((int)$webhook['data']['id']);
         if (!$payoutOrder) {
-            $this->addLog($this->module->l('No payout order found for payout checkout webhook', 'webhook'), 2, null, 'Checkout', (int)$webhook['data']['id']);
+            Payout::addLog($this->module->l('No payout order found for payout checkout webhook', 'webhook'), 2, null, 'Checkout', (int)$webhook['data']['id']);
             http_response_code(404);
             return;
         }
 
         if ($payoutOrder['id_order'] != $webhook['external_id']) {
-            $this->addLog($this->module->l('Prestashop order id is different from received external_id, external_id:', 'webhook') . ' ' . $webhook['external_id'], 2, null, 'Order', (int)$payoutOrder['id_order']);
+            Payout::addLog($this->module->l('Prestashop order id is different from received external_id, external_id:', 'webhook') . ' ' . $webhook['external_id'], 2, null, 'Order', (int)$payoutOrder['id_order']);
             http_response_code(404);
             return;
         }
@@ -76,7 +76,7 @@ class PayoutWebhookModuleFrontController extends PayoutAbstractFrontController
         $payoutSecret = Configuration::get(Payout::PAYOUT_SECRET);
         // check if payout secret is filled
         if (empty($payoutSecret)) {
-            $this->addLog($this->module->l('Can not verify webhook: payout secret is not configured for this context', 'webhook'), 3);
+            Payout::addLog($this->module->l('Can not verify webhook: payout secret is not configured for this context', 'webhook'), 3);
             http_response_code(401);
             return;
         }
@@ -90,7 +90,7 @@ class PayoutWebhookModuleFrontController extends PayoutAbstractFrontController
                 $webhook['signature']
             )
         ) {
-            $this->addLog($this->module->l('No valid signature for payout checkout webhook', 'webhook'), 3, null, 'Checkout', (int)$webhook['data']['id']);
+            Payout::addLog($this->module->l('No valid signature for payout checkout webhook', 'webhook'), 3, null, 'Checkout', (int)$webhook['data']['id']);
             http_response_code(400);
             return;
         }
