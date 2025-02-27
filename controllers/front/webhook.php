@@ -53,7 +53,7 @@ class PayoutWebhookModuleFrontController extends PayoutAbstractFrontController
     private function parseWebhook(array $webhook): void
     {
         // check if webhook is checkout webhook
-        if (!isset($webhook['object']) || $webhook['object'] != "webhook" || !isset($webhook['type']) || explode(".", $webhook['type'])[0] != "checkout") {
+        if (!isset($webhook['object']) || $webhook['object'] != "webhook" || !isset($webhook['data']) || !isset($webhook['data']['object']) || $webhook['data']['object'] != "checkout" || !isset($webhook['type']) || explode(".", $webhook['type'])[0] != "checkout") {
             http_response_code(404);
             return;
         }
@@ -114,7 +114,7 @@ class PayoutWebhookModuleFrontController extends PayoutAbstractFrontController
             'date_added' => date('Y-m-d H:i:s'),
         ]);
 
-        if (in_array($currentOrderState->id, [$this->moduleConfigurations[Payout::PAYOUT_OS_PENDING], $this->moduleConfigurations[Payout::PAYOUT_OS_EXPIRED]]) && $webhook['data']['status'] == Payout::CHECKOUT_STATE_SUCCEEDED) {
+        if ($currentOrderState->id != Configuration::get('PS_OS_PAYMENT') && $webhook['data']['status'] == Payout::CHECKOUT_STATE_SUCCEEDED) {
             // if current order state is pending and response status is succeeded -> set payment accepted order status
             $history = new OrderHistory();
             $history->id_order = $order->id;
