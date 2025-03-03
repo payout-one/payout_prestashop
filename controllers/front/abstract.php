@@ -107,7 +107,7 @@ abstract class PayoutAbstractFrontController extends ModuleFrontController
         }
 
         $currentOrderState = $order->getCurrentOrderState();
-        if (in_array($currentOrderState->id, [$this->moduleConfigurations[Payout::PAYOUT_OS_PENDING], $this->moduleConfigurations[Payout::PAYOUT_OS_EXPIRED]]) && $checkoutResponse->status == Payout::CHECKOUT_STATE_SUCCEEDED) {
+        if ($currentOrderState->id != Configuration::get('PS_OS_PAYMENT') && $checkoutResponse->status == Payout::CHECKOUT_STATE_SUCCEEDED) {
             // if current order state is pending and response status is succeeded -> set payment accepted order status and log to log table
             $history = new OrderHistory();
             $history->id_order = $order->id;
